@@ -72,19 +72,24 @@ Found a bug or have a question? [Open an issue](https://github.com/decampsrenan/
 
 ## Contributing
 
+Requires [Go](https://go.dev/) 1.25+ and [just](https://github.com/casey/just).
+
 ```sh
 # Clone the repository
 git clone https://github.com/decampsrenan/spm.git
 cd spm
 
-# Install dependencies
-go mod download
+# Install dev tools and git hooks
+just setup
 
 # Run tests
-go test ./...
+just test
+
+# Format code
+just fmt
 
 # Build
-go build -o spm .
+just build
 ```
 
 ## License
