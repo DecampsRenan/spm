@@ -47,6 +47,10 @@ var addCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print command instead of executing it")
+	// Allow unknown flags to pass through to the underlying package manager
+	// (e.g. spm add react --save-dev, spm dev --port 3000)
+	rootCmd.FParseErrWhitelist.UnknownFlags = true
+	addCmd.FParseErrWhitelist.UnknownFlags = true
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
 }
