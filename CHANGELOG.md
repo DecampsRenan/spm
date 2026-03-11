@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `justfile` with `setup`, `fmt`, `test`, and `build` recipes.
 - CI format check job to catch unformatted code.
 - Tests for `cmd`, `runner`, and `prompt` packages.
+- Fallback to `~/.local/bin` in install script when `/usr/local/bin` is not writable.
+- PATH warning when install directory is not in user's PATH.
 
 ## [0.1.0] - 2026-03-11
 
