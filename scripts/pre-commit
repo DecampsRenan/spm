@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Get staged .go files (only Added/Copied/Modified, not deleted)
+STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.go')
+
+if [ -z "$STAGED_GO_FILES" ]; then
+    exit 0
+fi
+
+# Check goimports is installed
+if ! command -v goimports &>/dev/null; then
+    echo "goimports not found. Run: just setup"
+    exit 1
+fi
+
+# Format staged files and re-add them
+echo "$STAGED_GO_FILES" | xargs goimports -w
+echo "$STAGED_GO_FILES" | xargs git add
+
+echo "pre-commit: goimports applied."
