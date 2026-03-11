@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -58,22 +59,23 @@ func Execute() {
 	}
 
 	// Override the default behavior: if Cobra can't find the subcommand,
-	// run it as a script.
-	if len(os.Args) > 1 {
-		first := os.Args[1]
-		if first != "install" && first != "i" && first != "add" &&
-			first != "help" && first != "completion" &&
-			first != "--help" && first != "-h" &&
-			first != "--dry-run" {
-			// Treat as a script fallback
-			rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
-				// args from cobra includes "first" as the first element; skip it
-				var extra []string
-				if len(args) > 0 {
-					extra = args[1:]
-				}
-				return run(first, extra)
+	// run it as a script. Find the first non-flag argument to determine
+	// the subcommand, so flags like --dry-run can appear before it.
+	knownCmds := map[string]bool{
+		"install": true, "i": true, "add": true,
+		"help": true, "completion": true,
+	}
+
+	if scriptName := firstNonFlagArg(os.Args[1:]); scriptName != "" && !knownCmds[scriptName] {
+		script := scriptName
+		rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
+			// args from Cobra contains positional args after flag parsing;
+			// the first element is the script name, the rest are extra args.
+			var extra []string
+			if len(args) > 1 {
+				extra = args[1:]
 			}
+			return run(script, extra)
 		}
 	}
 
@@ -81,6 +83,16 @@ func Execute() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// firstNonFlagArg returns the first argument that doesn't start with "-".
+func firstNonFlagArg(args []string) string {
+	for _, a := range args {
+		if !strings.HasPrefix(a, "-") {
+			return a
+		}
+	}
+	return ""
 }
 
 func run(command string, extraArgs []string) error {
