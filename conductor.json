@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "go mod download && go build -o /dev/null .",
+    "run": "go test ./... -v"
+  }
+}
