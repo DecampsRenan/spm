@@ -10,6 +10,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'chore: release')"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,8 +20,8 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Bump version and push tag
-        id: tag
+      - name: Compute next version
+        id: version
         run: |
           git fetch --tags
           LATEST=$(git tag -l 'v*' --sort=-v:refname | head -n1)
@@ -32,9 +33,25 @@ jobs:
             PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
             NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
           fi
-          git tag "$NEXT"
-          git push origin "$NEXT"
           echo "tag=$NEXT" >> "$GITHUB_OUTPUT"
+
+      - name: Update CHANGELOG
+        run: |
+          bash scripts/update-changelog.sh "${{ steps.version.outputs.tag }}"
+          if git diff --quiet CHANGELOG.md; then
+            echo "No CHANGELOG changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add CHANGELOG.md
+            git commit -m "chore: release ${{ steps.version.outputs.tag }}"
+            git push origin main
+          fi
+
+      - name: Tag and push
+        run: |
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
 
       - uses: goreleaser/goreleaser-action@v6
         with:

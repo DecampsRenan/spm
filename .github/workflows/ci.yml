@@ -43,3 +43,16 @@ jobs:
         with:
           go-version-file: go.mod
       - run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 go build -o spm .
+
+  changelog:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check CHANGELOG has unreleased entries
+        run: |
+          CONTENT=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | tail -n +2 | sed '$d')
+          if ! echo "$CONTENT" | grep -q '^ *- '; then
+            echo "::error::No entries found in [Unreleased] section of CHANGELOG.md. Please document your changes."
+            exit 1
+          fi
