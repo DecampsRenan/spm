@@ -55,6 +55,10 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 }
 
+func SetVersion(v string) {
+	rootCmd.Version = v
+}
+
 func Execute() {
 	// If the command is not recognized by Cobra, treat it as a script run (fallback)
 	// We do this by intercepting unknown subcommands via a custom args function.
