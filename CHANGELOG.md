@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--vibes` flag to play background music during `spm install`.
+
 ### Fixed
 
 - `--dry-run` flag now works correctly when placed before the script name (e.g., `spm --dry-run dev`).

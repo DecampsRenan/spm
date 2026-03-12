@@ -20,3 +20,7 @@ test:
 # Build binary
 build:
     go build -o spm .
+
+# Build and install as spm-dev in GOPATH/bin
+dev:
+    go build -o "$(go env GOPATH)/bin/spm-dev" .
