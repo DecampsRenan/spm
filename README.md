@@ -56,6 +56,10 @@ spm build
 
 # Preview what would run without executing
 spm dev --dry-run
+
+# Show version
+spm --version
+spm -v
 ```
 
 ### Command mapping
@@ -90,6 +94,9 @@ just fmt
 
 # Build
 just build
+
+# Watch and rebuild on changes
+just dev
 ```
 
 ## License

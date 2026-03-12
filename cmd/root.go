@@ -55,6 +55,11 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 }
 
+func SetVersion(v string) {
+	rootCmd.Version = v
+	rootCmd.Flags().BoolP("version", "v", false, "Print the version")
+}
+
 func Execute() {
 	// If the command is not recognized by Cobra, treat it as a script run (fallback)
 	// We do this by intercepting unknown subcommands via a custom args function.
@@ -67,7 +72,7 @@ func Execute() {
 	// the subcommand, so flags like --dry-run can appear before it.
 	knownCmds := map[string]bool{
 		"install": true, "i": true, "add": true,
-		"help": true, "completion": true,
+		"help": true, "completion": true, "version": true,
 	}
 
 	if scriptName := firstNonFlagArg(os.Args[1:]); scriptName != "" && !knownCmds[scriptName] {
