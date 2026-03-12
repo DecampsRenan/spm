@@ -3,6 +3,7 @@ setup:
     #!/usr/bin/env bash
     set -euo pipefail
     go install golang.org/x/tools/cmd/goimports@latest
+    go install github.com/mitranim/gow@latest
     HOOKS_DIR="$(git rev-parse --git-path hooks)"
     mkdir -p "$HOOKS_DIR"
     cp scripts/pre-commit "$HOOKS_DIR/pre-commit"
@@ -21,6 +22,6 @@ test:
 build:
     go build -o spm .
 
-# Build and install as spm-dev in GOPATH/bin
+# Watch and rebuild dev binary
 dev:
-    go build -o "$(go env GOPATH)/bin/spm-dev" .
+    gow -e=go,mod build -ldflags "-X main.version=dev" -o "$(go env GOPATH)/bin/spm-dev" .

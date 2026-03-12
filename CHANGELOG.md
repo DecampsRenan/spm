@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests for `cmd`, `runner`, and `prompt` packages.
 - Fallback to `~/.local/bin` in install script when `/usr/local/bin` is not writable.
 - PATH warning when install directory is not in user's PATH.
+- `--version` / `-v` flag to display the build version.
+- `just dev` recipe using `gow` for watch-mode rebuilds during development.
 
 ## [0.1.0] - 2026-03-11
 

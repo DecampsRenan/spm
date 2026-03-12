@@ -60,6 +60,10 @@ spm dev --dry-run
 
 # Install with background music
 spm install --vibes
+
+# Show version
+spm --version
+spm -v
 ```
 
 ### Command mapping
@@ -94,6 +98,9 @@ just fmt
 
 # Build
 just build
+
+# Watch and rebuild on changes
+just dev
 ```
 
 ## License
