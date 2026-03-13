@@ -1,7 +1,12 @@
 package runner
 
 import (
+	"os"
+	"os/exec"
+	"runtime"
+	"syscall"
 	"testing"
+	"time"
 )
 
 func TestRunDryRun(t *testing.T) {
@@ -97,5 +102,49 @@ func TestRunNotifyBinaryNotFound(t *testing.T) {
 	err := Run([]string{"nonexistent-binary-xyz-12345"}, false, false, true)
 	if err == nil {
 		t.Fatal("expected error for missing binary in notify mode")
+	}
+}
+
+// TestRunVibesSIGINTExits verifies that sending SIGINT to the runner process
+// causes it to exit with code 130 (the standard SIGINT exit code).
+// This uses the subprocess test pattern because Run calls os.Exit.
+func TestRunVibesSIGINTExits(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("SIGINT test not supported on Windows")
+	}
+
+	if os.Getenv("TEST_RUN_VIBES_SIGINT") == "1" {
+		// We are the subprocess. Run a long sleep with vibes (audio disabled).
+		_ = Run([]string{"sleep", "60"}, false, true, false)
+		return
+	}
+
+	// Launch ourselves as a subprocess with the sentinel env var.
+	cmd := exec.Command(os.Args[0], "-test.run=^TestRunVibesSIGINTExits$")
+	cmd.Env = append(os.Environ(), "TEST_RUN_VIBES_SIGINT=1", "SPM_DISABLE_AUDIO=1")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start subprocess: %v", err)
+	}
+
+	// Give the subprocess time to set up the signal handler.
+	time.Sleep(500 * time.Millisecond)
+
+	// Send SIGINT to the subprocess.
+	if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
+		t.Fatalf("failed to send SIGINT: %v", err)
+	}
+
+	err := cmd.Wait()
+	if err == nil {
+		t.Fatal("expected subprocess to exit with non-zero code")
+	}
+
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("expected ExitError, got %T: %v", err, err)
+	}
+
+	if exitErr.ExitCode() != 130 {
+		t.Errorf("expected exit code 130, got %d", exitErr.ExitCode())
 	}
 }

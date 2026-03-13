@@ -192,7 +192,7 @@ func PlayMusicAndWait(fadeIn time.Duration) error {
 	}
 
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGTERM)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	<-sig
 
 	p.FadeOut(fadeOutDuration)
