@@ -65,5 +65,6 @@ jobs:
             git push origin "$BRANCH"
             gh pr create --base main --head "$BRANCH" \
               --title "chore: release ${{ steps.version.outputs.tag }}" \
-              --body "Automated changelog update for ${{ steps.version.outputs.tag }}"
+              --body "Automated changelog update for ${{ steps.version.outputs.tag }}" \
+              || echo "Warning: could not create PR for changelog update"
           fi
