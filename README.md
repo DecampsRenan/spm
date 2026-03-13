@@ -14,6 +14,7 @@ Stop thinking about which package manager a project uses. Just run `spm install`
 - **Command translation** — maps commands to the correct syntax for each package manager
 - **Interactive prompt** when multiple lock files are detected
 - **Dry-run mode** to preview commands without executing them
+- **Vibes mode** — play background music while installing dependencies (`--vibes`)
 
 ## Installation
 
@@ -56,6 +57,9 @@ spm build
 
 # Preview what would run without executing
 spm dev --dry-run
+
+# Install with background music
+spm install --vibes
 
 # Show version
 spm --version
