@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Unified audio handling into a single implementation using beep with purego, removing CGO build-tag stubs.
 - Audio playback (vibes music and notifications) now runs in detached child processes for non-blocking CLI usage.
+- Release workflow is now manually triggered via `workflow_dispatch` with semantic version bump selection (patch/minor/major).
+- Changelog is committed directly to main during release instead of creating a separate PR.
+- Reinforced agent instructions in AGENTS.md to enforce changelog maintenance on feature branches.
 
 ### Fixed
 
