@@ -97,7 +97,7 @@ func (p *Player) Stop() {
 	if p.volume != nil {
 		speaker.Lock()
 		p.volume.Silent = true
-		p.volume.Streamer = nil
+		p.volume.Streamer = beep.Silence(-1)
 		speaker.Unlock()
 	}
 }
