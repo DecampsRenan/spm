@@ -18,3 +18,12 @@ func (p *Player) FadeOut(d time.Duration) {}
 
 // Stop is a no-op when CGO is disabled.
 func (p *Player) Stop() {}
+
+// CloseAudio is a no-op when CGO is disabled.
+func CloseAudio() {}
+
+// PlayNotification is a no-op when CGO is disabled.
+func PlayNotification(success bool, vibes bool) error { return nil }
+
+// RunPlaybackSubprocess is a no-op when CGO is disabled.
+func RunPlaybackSubprocess() bool { return false }

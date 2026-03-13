@@ -16,8 +16,10 @@ const errorFadeDuration = 500 * time.Millisecond
 
 // Run executes the given command. If dryRun is true, it prints what would be
 // run and returns nil. If vibes is true, it plays background music during
-// execution. Otherwise it replaces the current process via syscall.Exec.
-func Run(args []string, dryRun bool, vibes bool) error {
+// execution. If notify is true, it plays a short sound when the command
+// finishes (different for success and error). Otherwise it replaces the
+// current process via syscall.Exec.
+func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	if len(args) == 0 {
 		return fmt.Errorf("no command to run")
 	}
@@ -32,31 +34,54 @@ func Run(args []string, dryRun bool, vibes bool) error {
 		return fmt.Errorf("%s not found in PATH: %w", args[0], err)
 	}
 
-	if !vibes {
+	if !vibes && !notify {
 		return syscall.Exec(bin, args, os.Environ())
 	}
 
-	// Vibes mode: run as child process so we can play music concurrently.
-	player := audio.NewPlayer()
-	if err := player.Play(fadeDuration); err != nil {
-		fmt.Fprintf(os.Stderr, "warning: could not play music: %v\n", err)
+	// Child process mode: needed for vibes (concurrent music) and/or notify
+	// (post-command sound). Audio device is closed once at the end.
+	var player *audio.Player
+	if vibes {
+		player = audio.NewPlayer()
+		if err := player.Play(fadeDuration); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not play music: %v\n", err)
+		}
 	}
-	defer player.Stop()
 
 	cmd := exec.Command(bin, args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		player.FadeOut(errorFadeDuration)
-		player.Stop()
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			os.Exit(exitErr.ExitCode())
+	cmdErr := cmd.Run()
+
+	// Stop vibes: immediate stop when notify follows, fade-out otherwise.
+	if player != nil {
+		if notify {
+			player.Stop()
+		} else if cmdErr != nil {
+			player.FadeOut(errorFadeDuration)
+			player.Stop()
+		} else {
+			player.FadeOut(fadeDuration)
+			player.Stop()
 		}
-		return err
+		audio.CloseAudio()
 	}
 
-	player.FadeOut(fadeDuration)
+	// Fire-and-forget: launches a background system process to play the sound.
+	if notify {
+		if err := audio.PlayNotification(cmdErr == nil, vibes); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not play notification: %v\n", err)
+		}
+	}
+
+	if cmdErr != nil {
+		if exitErr, ok := cmdErr.(*exec.ExitError); ok {
+			os.Exit(exitErr.ExitCode())
+		}
+		return cmdErr
+	}
+
 	return nil
 }

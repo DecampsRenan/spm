@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gopxl/beep/v2"
@@ -21,12 +23,26 @@ import (
 //go:embed tashkent.mp3
 var trackData []byte
 
+//go:embed notification-pop.mp3
+var successSoundData []byte
+
+//go:embed error-001.mp3
+var errorSoundData []byte
+
+//go:embed ding.mp3
+var dingSoundData []byte
+
+// speakerOnce ensures the speaker is initialised at most once. The beep library
+// does not allow re-initialisation after Close, so we keep the speaker alive
+// and only close it when the process is done with all audio.
+var speakerOnce sync.Once
+var speakerInitErr error
+
 // Player manages background audio playback with fade support.
 type Player struct {
 	volume     *effects.Volume
 	done       chan struct{}
 	cancelFade chan struct{}
-	initOnce   sync.Once
 	stopped    atomic.Bool
 	mu         sync.Mutex // guards cancelFade
 }
@@ -52,12 +68,8 @@ func (p *Player) Play(fadeIn time.Duration) error {
 		return fmt.Errorf("decode mp3: %w", err)
 	}
 
-	var initErr error
-	p.initOnce.Do(func() {
-		initErr = speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond))
-	})
-	if initErr != nil {
-		return fmt.Errorf("init speaker: %w", initErr)
+	if err := initSpeaker(format.SampleRate); err != nil {
+		return fmt.Errorf("init speaker: %w", err)
 	}
 
 	loop := beep.Loop(-1, streamer)
@@ -111,11 +123,22 @@ func (p *Player) FadeOut(d time.Duration) {
 	p.fade(from, 0, d)
 }
 
-// Stop immediately stops playback and releases resources.
+// Stop immediately mutes playback and marks the player as stopped.
+// It does NOT close the speaker — call CloseAudio() when all audio is done.
 func (p *Player) Stop() {
 	if !p.stopped.CompareAndSwap(false, true) {
 		return
 	}
+	if p.volume != nil {
+		speaker.Lock()
+		p.volume.Silent = true
+		speaker.Unlock()
+	}
+}
+
+// CloseAudio tears down the audio device. Call this once when the process is
+// finished with all audio playback (vibes + notification).
+func CloseAudio() {
 	speaker.Close()
 }
 
@@ -152,6 +175,14 @@ func volumeToDb(level float64) float64 {
 	return math.Log2(level)
 }
 
+// initSpeaker initialises the speaker exactly once for the process lifetime.
+func initSpeaker(rate beep.SampleRate) error {
+	speakerOnce.Do(func() {
+		speakerInitErr = speaker.Init(rate, rate.N(100*time.Millisecond))
+	})
+	return speakerInitErr
+}
+
 // dbToVolume converts a decibel value back to linear volume (0.0–1.0).
 func dbToVolume(db float64) float64 {
 	v := math.Pow(2, db)
@@ -162,6 +193,85 @@ func dbToVolume(db float64) float64 {
 		return 1
 	}
 	return v
+}
+
+const playSoundEnv = "_SPM_PLAY_SOUND"
+
+// PlayNotification spawns the current binary as a detached subprocess that
+// plays the notification sound via beep. The caller returns immediately.
+// When vibes is true and success is true, the elevator "ding" is played.
+// Set SPM_DISABLE_AUDIO=1 to skip playback.
+func PlayNotification(success bool, vibes bool) error {
+	if os.Getenv("SPM_DISABLE_AUDIO") == "1" {
+		return nil
+	}
+
+	data := errorSoundData
+	if success && vibes {
+		data = dingSoundData
+	} else if success {
+		data = successSoundData
+	}
+
+	// Write sound to a temp file so the subprocess can read it.
+	f, err := os.CreateTemp("", "spm-notify-*.mp3")
+	if err != nil {
+		return fmt.Errorf("create temp file: %w", err)
+	}
+	if _, err := f.Write(data); err != nil {
+		f.Close()
+		return fmt.Errorf("write temp file: %w", err)
+	}
+	f.Close()
+
+	// Re-launch ourselves with the special env var.
+	self, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("resolve executable: %w", err)
+	}
+
+	cmd := exec.Command(self)
+	cmd.Env = append(os.Environ(), playSoundEnv+"="+f.Name())
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("start playback subprocess: %w", err)
+	}
+
+	return nil
+}
+
+// RunPlaybackSubprocess checks if the process was launched as a sound-playing
+// subprocess. If so, it plays the sound, cleans up, and returns true.
+// Call this early in main() before any CLI parsing.
+func RunPlaybackSubprocess() bool {
+	soundFile := os.Getenv(playSoundEnv)
+	if soundFile == "" {
+		return false
+	}
+	defer os.Remove(soundFile)
+
+	data, err := os.ReadFile(soundFile)
+	if err != nil {
+		return true
+	}
+
+	reader := bytes.NewReader(data)
+	streamer, format, err := mp3.Decode(nopCloserReader{reader})
+	if err != nil {
+		return true
+	}
+
+	if err := initSpeaker(format.SampleRate); err != nil {
+		return true
+	}
+
+	done := make(chan struct{})
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		close(done)
+	})))
+	<-done
+	speaker.Close()
+	return true
 }
 
 // nopCloserReader wraps a bytes.Reader to satisfy io.ReadCloser.

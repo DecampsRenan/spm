@@ -15,6 +15,7 @@ import (
 
 var dryRun bool
 var vibes bool
+var notify bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spm",
@@ -49,6 +50,7 @@ var addCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print command instead of executing it")
 	rootCmd.PersistentFlags().BoolVar(&vibes, "vibes", false, "Play background music during install")
+	rootCmd.PersistentFlags().BoolVar(&notify, "notify", false, "Play a sound when the command finishes")
 	// Allow unknown flags to pass through to the underlying package manager
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
@@ -128,5 +130,5 @@ func run(command string, extraArgs []string) error {
 	}
 
 	args := resolver.Resolve(det.PM, command, extraArgs)
-	return runner.Run(args, dryRun, vibes && command == "install")
+	return runner.Run(args, dryRun, vibes && command == "install", notify)
 }
