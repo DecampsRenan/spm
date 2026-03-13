@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 	"syscall"
 	"time"
@@ -51,6 +52,19 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// Intercept SIGINT so we can stop background tasks before exiting.
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT)
+	defer signal.Stop(sigCh)
+
+	go func() {
+		<-sigCh
+		if vibesProc != nil {
+			vibesProc.StopImmediately()
+		}
+		os.Exit(130)
+	}()
 
 	runErr := cmd.Run()
 
