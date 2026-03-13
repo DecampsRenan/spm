@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -57,6 +59,19 @@ var playSoundCmd = &cobra.Command{
 	},
 }
 
+var playMusicCmd = &cobra.Command{
+	Use:    "_play-music [fade-in-seconds]",
+	Hidden: true,
+	Args:   cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		secs, err := strconv.Atoi(args[0])
+		if err != nil {
+			return fmt.Errorf("invalid fade-in duration: %w", err)
+		}
+		return audio.PlayMusicAndWait(time.Duration(secs) * time.Second)
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print command instead of executing it")
 	rootCmd.PersistentFlags().BoolVar(&vibes, "vibes", false, "Play background music during install")
@@ -68,6 +83,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(playSoundCmd)
+	rootCmd.AddCommand(playMusicCmd)
 }
 
 func SetVersion(v string) {
@@ -88,7 +104,7 @@ func Execute() {
 	knownCmds := map[string]bool{
 		"install": true, "i": true, "add": true,
 		"help": true, "completion": true, "version": true,
-		"_play-sound": true,
+		"_play-sound": true, "_play-music": true,
 	}
 
 	if scriptName := firstNonFlagArg(os.Args[1:]); scriptName != "" && !knownCmds[scriptName] {

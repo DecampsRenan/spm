@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"os/signal"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -90,18 +91,26 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	return nil
 }
 
-// Stop immediately silences playback. The underlying speaker is left open so
-// that PlayNotification can reuse it afterwards.
+// FadeOut gradually reduces the volume to zero over the given duration.
+func (p *Player) FadeOut(d time.Duration) {
+	if p.volume == nil || p.stopped.Load() {
+		return
+	}
+	speaker.Lock()
+	from := dbToVolume(p.volume.Volume)
+	if p.volume.Silent {
+		from = 0
+	}
+	speaker.Unlock()
+	p.fade(from, 0, d)
+}
+
+// Stop immediately silences playback and closes the speaker.
 func (p *Player) Stop() {
 	if !p.stopped.CompareAndSwap(false, true) {
 		return
 	}
-	if p.volume != nil {
-		speaker.Lock()
-		p.volume.Silent = true
-		p.volume.Streamer = beep.Silence(-1)
-		speaker.Unlock()
-	}
+	speaker.Close()
 }
 
 func (p *Player) fade(from, to float64, d time.Duration) {
@@ -132,12 +141,88 @@ func volumeToDb(level float64) float64 {
 	return math.Log2(level)
 }
 
+// dbToVolume converts a decibel value back to linear volume (0.0–1.0).
+func dbToVolume(db float64) float64 {
+	v := math.Pow(2, db)
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
+}
+
 // nopCloserReader wraps a bytes.Reader to satisfy io.ReadCloser.
 type nopCloserReader struct {
 	*bytes.Reader
 }
 
 func (nopCloserReader) Close() error { return nil }
+
+const fadeOutDuration = 2 * time.Second
+
+// PlayMusicAndWait plays the vibes track with a fade-in, then blocks until
+// SIGTERM is received. On SIGTERM it fades out and exits. This is intended
+// to be called from the hidden _play-music subcommand.
+func PlayMusicAndWait(fadeIn time.Duration) error {
+	p := NewPlayer()
+	if err := p.Play(fadeIn); err != nil {
+		return err
+	}
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM)
+	<-sig
+
+	p.FadeOut(fadeOutDuration)
+	p.Stop()
+	return nil
+}
+
+// VibesProcess represents a detached child process playing background music.
+type VibesProcess struct {
+	cmd *exec.Cmd
+}
+
+// StartVibes launches a detached child process that plays background music.
+func StartVibes(fadeIn time.Duration) (*VibesProcess, error) {
+	if os.Getenv("SPM_DISABLE_AUDIO") == "1" {
+		return &VibesProcess{}, nil
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		return nil, fmt.Errorf("resolve executable: %w", err)
+	}
+
+	cmd := exec.Command(exe, "_play-music", fmt.Sprintf("%d", int(fadeIn.Seconds())))
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("start vibes process: %w", err)
+	}
+
+	return &VibesProcess{cmd: cmd}, nil
+}
+
+// StopImmediately kills the vibes process without fade-out.
+func (v *VibesProcess) StopImmediately() {
+	if v.cmd == nil || v.cmd.Process == nil {
+		return
+	}
+	_ = v.cmd.Process.Kill()
+	_ = v.cmd.Wait()
+}
+
+// FadeOutAndDetach sends SIGTERM to the vibes process (triggering fade-out)
+// and detaches. The child process fades out and exits on its own.
+func (v *VibesProcess) FadeOutAndDetach() {
+	if v.cmd == nil || v.cmd.Process == nil {
+		return
+	}
+	_ = v.cmd.Process.Signal(syscall.SIGTERM)
+	go func() { _ = v.cmd.Wait() }()
+}
 
 // SoundName identifies a notification sound.
 type SoundName string
