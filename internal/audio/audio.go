@@ -33,15 +33,18 @@ var dingSoundData []byte
 
 // Player manages background audio playback with fade support.
 type Player struct {
-	volume  *effects.Volume
-	done    chan struct{}
-	stopped atomic.Bool
+	volume     *effects.Volume
+	done       chan struct{}
+	cancelFade chan struct{}
+	stopped    atomic.Bool
+	mu         sync.Mutex // guards cancelFade
 }
 
 // NewPlayer creates a new audio player.
 func NewPlayer() *Player {
 	return &Player{
-		done: make(chan struct{}),
+		done:       make(chan struct{}),
+		cancelFade: make(chan struct{}),
 	}
 }
 
@@ -91,11 +94,22 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	return nil
 }
 
-// FadeOut gradually reduces the volume to zero over the given duration.
+// FadeOut cancels any in-progress fade, then gradually reduces the volume to
+// zero over the given duration.
 func (p *Player) FadeOut(d time.Duration) {
 	if p.volume == nil || p.stopped.Load() {
 		return
 	}
+	// Cancel any running fade-in before starting fade-out.
+	p.mu.Lock()
+	select {
+	case <-p.cancelFade:
+	default:
+		close(p.cancelFade)
+	}
+	p.cancelFade = make(chan struct{})
+	p.mu.Unlock()
+
 	speaker.Lock()
 	from := dbToVolume(p.volume.Volume)
 	if p.volume.Silent {
@@ -119,6 +133,11 @@ func (p *Player) fade(from, to float64, d time.Duration) {
 	for i := 0; i <= steps; i++ {
 		if p.stopped.Load() {
 			return
+		}
+		select {
+		case <-p.cancelFade:
+			return
+		default:
 		}
 		level := from + (to-from)*float64(i)/float64(steps)
 		speaker.Lock()
