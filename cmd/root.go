@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/decampsrenan/spm/internal/audio"
 	"github.com/decampsrenan/spm/internal/detector"
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
@@ -47,6 +48,15 @@ var addCmd = &cobra.Command{
 	},
 }
 
+var playSoundCmd = &cobra.Command{
+	Use:    "_play-sound [name]",
+	Hidden: true,
+	Args:   cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return audio.PlaySound(args[0])
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print command instead of executing it")
 	rootCmd.PersistentFlags().BoolVar(&vibes, "vibes", false, "Play background music during install")
@@ -57,6 +67,7 @@ func init() {
 	addCmd.FParseErrWhitelist.UnknownFlags = true
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(playSoundCmd)
 }
 
 func SetVersion(v string) {
@@ -77,6 +88,7 @@ func Execute() {
 	knownCmds := map[string]bool{
 		"install": true, "i": true, "add": true,
 		"help": true, "completion": true, "version": true,
+		"_play-sound": true,
 	}
 
 	if scriptName := firstNonFlagArg(os.Args[1:]); scriptName != "" && !knownCmds[scriptName] {

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gopxl/beep/v2"
@@ -102,11 +104,6 @@ func (p *Player) Stop() {
 	}
 }
 
-// Close shuts down the shared speaker. Call once when all audio work is done.
-func Close() {
-	speaker.Close()
-}
-
 func (p *Player) fade(from, to float64, d time.Duration) {
 	steps := 30
 	stepDuration := d / time.Duration(steps)
@@ -142,36 +139,73 @@ type nopCloserReader struct {
 
 func (nopCloserReader) Close() error { return nil }
 
-// PlayNotification decodes and plays a one-shot notification sound using beep,
-// blocking until playback completes. When vibes is true and success is true,
-// plays the elevator ding instead of the default pop.
-func PlayNotification(success bool, vibes bool) error {
+// SoundName identifies a notification sound.
+type SoundName string
+
+const (
+	SoundSuccess SoundName = "success"
+	SoundError   SoundName = "error"
+	SoundDing    SoundName = "ding"
+)
+
+// NotificationSound picks the right sound name for the given outcome.
+func NotificationSound(success bool, vibes bool) SoundName {
+	switch {
+	case vibes && success:
+		return SoundDing
+	case success:
+		return SoundSuccess
+	default:
+		return SoundError
+	}
+}
+
+// PlayNotification launches a detached child process (re-execing the current
+// binary with _play-sound) that plays the notification and exits. The caller
+// returns immediately so the terminal is unblocked.
+func PlayNotification(sound SoundName) error {
 	if os.Getenv("SPM_DISABLE_AUDIO") == "1" {
 		return nil
 	}
 
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("resolve executable: %w", err)
+	}
+
+	cmd := exec.Command(exe, "_play-sound", string(sound))
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("start notification process: %w", err)
+	}
+
+	// Detach — don't wait for the child.
+	go func() { _ = cmd.Wait() }()
+	return nil
+}
+
+// PlaySound plays the named embedded sound using beep, blocking until done.
+// This is intended to be called from the hidden _play-sound subcommand.
+func PlaySound(name string) error {
 	var data []byte
-	switch {
-	case vibes && success:
-		data = dingSoundData
-	case success:
+	switch SoundName(name) {
+	case SoundSuccess:
 		data = successSoundData
-	default:
+	case SoundError:
 		data = errorSoundData
+	case SoundDing:
+		data = dingSoundData
+	default:
+		return fmt.Errorf("unknown sound: %s", name)
 	}
 
 	reader := bytes.NewReader(data)
 	streamer, format, err := mp3.Decode(nopCloserReader{reader})
 	if err != nil {
-		return fmt.Errorf("decode notification mp3: %w", err)
+		return fmt.Errorf("decode mp3: %w", err)
 	}
 
-	// Speaker may already be initialised by the vibes Player; the once
-	// guard inside Player won't help here so we use a package-level once.
-	speakerOnce.Do(func() {
-		err = speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond))
-	})
-	if err != nil {
+	if err := speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond)); err != nil {
 		return fmt.Errorf("init speaker: %w", err)
 	}
 
@@ -181,9 +215,9 @@ func PlayNotification(success bool, vibes bool) error {
 	})))
 	<-done
 
+	speaker.Close()
 	return nil
 }
 
-// speakerOnce ensures the speaker is initialised at most once across both
-// Player (vibes) and PlayNotification.
+// speakerOnce ensures the speaker is initialised at most once.
 var speakerOnce sync.Once
