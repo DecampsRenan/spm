@@ -1,3 +1,5 @@
+//go:build cgo
+
 package audio
 
 import (
@@ -38,15 +40,18 @@ var speakerInitErr error
 
 // Player manages background audio playback with fade support.
 type Player struct {
-	volume  *effects.Volume
-	done    chan struct{}
-	stopped atomic.Bool
+	volume     *effects.Volume
+	done       chan struct{}
+	cancelFade chan struct{}
+	stopped    atomic.Bool
+	mu         sync.Mutex // guards cancelFade
 }
 
 // NewPlayer creates a new audio player.
 func NewPlayer() *Player {
 	return &Player{
-		done: make(chan struct{}),
+		done:       make(chan struct{}),
+		cancelFade: make(chan struct{}),
 	}
 }
 
@@ -92,12 +97,30 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	return nil
 }
 
-// FadeOut gradually reduces the volume to zero over the given duration.
+// FadeOut cancels any in-progress fade, then gradually reduces the volume to
+// zero over the given duration.
 func (p *Player) FadeOut(d time.Duration) {
 	if p.volume == nil || p.stopped.Load() {
 		return
 	}
-	p.fade(1, 0, d)
+	// Cancel any running fade-in before starting fade-out.
+	p.mu.Lock()
+	select {
+	case <-p.cancelFade:
+	default:
+		close(p.cancelFade)
+	}
+	p.mu.Unlock()
+
+	// Read current volume level instead of assuming 1.0.
+	speaker.Lock()
+	from := dbToVolume(p.volume.Volume)
+	if p.volume.Silent {
+		from = 0
+	}
+	speaker.Unlock()
+
+	p.fade(from, 0, d)
 }
 
 // Stop immediately mutes playback and marks the player as stopped.
@@ -126,6 +149,11 @@ func (p *Player) fade(from, to float64, d time.Duration) {
 		if p.stopped.Load() {
 			return
 		}
+		select {
+		case <-p.cancelFade:
+			return
+		default:
+		}
 		level := from + (to-from)*float64(i)/float64(steps)
 		speaker.Lock()
 		if level <= 0.001 {
@@ -153,6 +181,18 @@ func initSpeaker(rate beep.SampleRate) error {
 		speakerInitErr = speaker.Init(rate, rate.N(100*time.Millisecond))
 	})
 	return speakerInitErr
+}
+
+// dbToVolume converts a decibel value back to linear volume (0.0–1.0).
+func dbToVolume(db float64) float64 {
+	v := math.Pow(2, db)
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
 }
 
 const playSoundEnv = "_SPM_PLAY_SOUND"
