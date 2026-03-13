@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"os/exec"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,10 +30,9 @@ var dingSoundData []byte
 
 // Player manages background audio playback with fade support.
 type Player struct {
-	volume   *effects.Volume
-	done     chan struct{}
-	initOnce sync.Once
-	stopped  atomic.Bool
+	volume  *effects.Volume
+	done    chan struct{}
+	stopped atomic.Bool
 }
 
 // NewPlayer creates a new audio player.
@@ -59,7 +56,7 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	}
 
 	var initErr error
-	p.initOnce.Do(func() {
+	speakerOnce.Do(func() {
 		initErr = speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond))
 	})
 	if initErr != nil {
@@ -91,11 +88,22 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	return nil
 }
 
-// Stop immediately stops playback and releases resources.
+// Stop immediately silences playback. The underlying speaker is left open so
+// that PlayNotification can reuse it afterwards.
 func (p *Player) Stop() {
 	if !p.stopped.CompareAndSwap(false, true) {
 		return
 	}
+	if p.volume != nil {
+		speaker.Lock()
+		p.volume.Silent = true
+		p.volume.Streamer = nil
+		speaker.Unlock()
+	}
+}
+
+// Close shuts down the shared speaker. Call once when all audio work is done.
+func Close() {
 	speaker.Close()
 }
 
@@ -134,9 +142,9 @@ type nopCloserReader struct {
 
 func (nopCloserReader) Close() error { return nil }
 
-// PlayNotification plays a one-shot notification sound (fire-and-forget)
-// via an OS-native audio command so the main process can exit immediately.
-// When vibes is true and success is true, plays the elevator ding instead.
+// PlayNotification decodes and plays a one-shot notification sound using beep,
+// blocking until playback completes. When vibes is true and success is true,
+// plays the elevator ding instead of the default pop.
 func PlayNotification(success bool, vibes bool) error {
 	if os.Getenv("SPM_DISABLE_AUDIO") == "1" {
 		return nil
@@ -152,55 +160,30 @@ func PlayNotification(success bool, vibes bool) error {
 		data = errorSoundData
 	}
 
-	tmpFile, err := writeTempMP3(data)
+	reader := bytes.NewReader(data)
+	streamer, format, err := mp3.Decode(nopCloserReader{reader})
 	if err != nil {
-		return fmt.Errorf("write notification mp3: %w", err)
+		return fmt.Errorf("decode notification mp3: %w", err)
 	}
 
-	cmd := osPlayerCmd(tmpFile)
-	if err := cmd.Start(); err != nil {
-		_ = os.Remove(tmpFile)
-		return fmt.Errorf("play notification: %w", err)
+	// Speaker may already be initialised by the vibes Player; the once
+	// guard inside Player won't help here so we use a package-level once.
+	speakerOnce.Do(func() {
+		err = speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond))
+	})
+	if err != nil {
+		return fmt.Errorf("init speaker: %w", err)
 	}
 
-	// Clean up temp file after playback completes in background.
-	go func() {
-		_ = cmd.Wait()
-		_ = os.Remove(tmpFile)
-	}()
+	done := make(chan struct{})
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		close(done)
+	})))
+	<-done
 
 	return nil
 }
 
-func writeTempMP3(data []byte) (string, error) {
-	f, err := os.CreateTemp("", "spm-*.mp3")
-	if err != nil {
-		return "", err
-	}
-	if _, err := f.Write(data); err != nil {
-		f.Close()
-		os.Remove(f.Name())
-		return "", err
-	}
-	if err := f.Close(); err != nil {
-		os.Remove(f.Name())
-		return "", err
-	}
-	return f.Name(), nil
-}
-
-func osPlayerCmd(file string) *exec.Cmd {
-	switch runtime.GOOS {
-	case "darwin":
-		return exec.Command("afplay", file)
-	default:
-		// Linux: try paplay first, fall back to aplay.
-		if path, err := exec.LookPath("paplay"); err == nil {
-			return exec.Command(path, file)
-		}
-		if path, err := exec.LookPath("aplay"); err == nil {
-			return exec.Command(path, file)
-		}
-		return exec.Command("ffplay", "-nodisp", "-autoexit", file)
-	}
-}
+// speakerOnce ensures the speaker is initialised at most once across both
+// Player (vibes) and PlayNotification.
+var speakerOnce sync.Once

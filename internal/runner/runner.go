@@ -38,6 +38,8 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	}
 
 	// Child process mode: run command as subprocess so we can manage audio.
+	defer audio.Close()
+
 	var player *audio.Player
 	if vibes {
 		player = audio.NewPlayer()
@@ -54,7 +56,7 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 
 	runErr := cmd.Run()
 
-	// Stop background music.
+	// Stop background music before playing notification.
 	if vibes && player != nil {
 		player.Stop()
 	}
