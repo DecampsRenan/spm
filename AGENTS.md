@@ -13,7 +13,7 @@ just build               # build binary
 
 ## Conventions
 
-- **README**: Keep `README.md` up to date when adding new commands, flags, or changing behavior.
+- **README (OBLIGATOIRE)**: When adding or changing flags, commands, or user-facing behavior, you **must** update `README.md` (features list + usage examples). The CI reviewer will flag this.
 - **Tests**: Add or update tests for any new functionality in the corresponding `_test.go` files.
 - **Formatting**: A pre-commit hook runs `goimports` on staged Go files. Run `just setup` after cloning.
 - **CI**: GitHub Actions runs `go test ./... -v -race`, format checks, and cross-platform builds on every PR.
