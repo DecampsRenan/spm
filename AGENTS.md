@@ -13,8 +13,30 @@ just build               # build binary
 
 ## Conventions
 
-- **Changelog**: Always update `CHANGELOG.md` when making user-facing changes. Add entries under `[Unreleased]` using the appropriate category (Added, Changed, Deprecated, Removed, Fixed, Security). Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 - **README**: Keep `README.md` up to date when adding new commands, flags, or changing behavior.
 - **Tests**: Add or update tests for any new functionality in the corresponding `_test.go` files.
 - **Formatting**: A pre-commit hook runs `goimports` on staged Go files. Run `just setup` after cloning.
 - **CI**: GitHub Actions runs `go test ./... -v -race`, format checks, and cross-platform builds on every PR.
+
+## Changelog (OBLIGATOIRE)
+
+**Toute modification de code DOIT être accompagnée d'une mise à jour du CHANGELOG.**
+
+Avant de soumettre ou pousser des changements :
+1. Ouvrir `CHANGELOG.md`
+2. Ajouter une entrée sous `## [Unreleased]` dans la catégorie appropriée :
+   - **Added** : nouvelles fonctionnalités
+   - **Changed** : modifications de fonctionnalités existantes
+   - **Deprecated** : fonctionnalités bientôt supprimées
+   - **Removed** : fonctionnalités supprimées
+   - **Fixed** : corrections de bugs
+   - **Security** : corrections de vulnérabilités
+3. Le CI **bloquera le merge** si aucune entrée n'est présente dans `[Unreleased]`
+4. Ne jamais modifier les sections versionnées (ex: `[0.1.5]`), uniquement `[Unreleased]`
+
+## Release
+
+Les releases sont déclenchées **manuellement** via GitHub Actions :
+1. Aller dans **Actions > Release > Run workflow**
+2. Choisir le type de bump : `patch`, `minor`, ou `major`
+3. Le workflow calcule la version, met à jour le changelog, tag, et publie via GoReleaser
