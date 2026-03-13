@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-13
+
 ### Added
 
 - `--notify` flag to play a completion sound when commands finish (success/error).
@@ -64,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform build configuration via GoReleaser (linux/darwin × amd64/arm64).
 - Curl-based installation script (`scripts/install.sh`).
 
-[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/DecampsRenan/spm/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/DecampsRenan/spm/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/DecampsRenan/spm/releases/tag/v0.1.0
