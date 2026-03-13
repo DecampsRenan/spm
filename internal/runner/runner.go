@@ -12,7 +12,6 @@ import (
 )
 
 const fadeDuration = 3 * time.Second
-const errorFadeDuration = 500 * time.Millisecond
 
 // Run executes the given command. If dryRun is true, it prints what would be
 // run and returns nil. If vibes is true, it plays background music during
@@ -55,16 +54,9 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 
 	runErr := cmd.Run()
 
-	// Stop background music before playing notification.
+	// Stop background music.
 	if vibes && player != nil {
-		if notify {
-			// Cut music immediately so the notification sound is clean.
-			player.Stop()
-		} else if runErr != nil {
-			player.FadeOut(errorFadeDuration)
-		} else {
-			player.FadeOut(fadeDuration)
-		}
+		player.Stop()
 	}
 
 	if notify {

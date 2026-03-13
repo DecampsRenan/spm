@@ -32,19 +32,16 @@ var dingSoundData []byte
 
 // Player manages background audio playback with fade support.
 type Player struct {
-	volume     *effects.Volume
-	done       chan struct{}
-	cancelFade chan struct{}
-	initOnce   sync.Once
-	stopped    atomic.Bool
-	mu         sync.Mutex // guards cancelFade
+	volume   *effects.Volume
+	done     chan struct{}
+	initOnce sync.Once
+	stopped  atomic.Bool
 }
 
 // NewPlayer creates a new audio player.
 func NewPlayer() *Player {
 	return &Player{
-		done:       make(chan struct{}),
-		cancelFade: make(chan struct{}),
+		done: make(chan struct{}),
 	}
 }
 
@@ -94,32 +91,6 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	return nil
 }
 
-// FadeOut cancels any in-progress fade, then gradually reduces the volume to
-// zero over the given duration.
-func (p *Player) FadeOut(d time.Duration) {
-	if p.volume == nil || p.stopped.Load() {
-		return
-	}
-	// Cancel any running fade-in before starting fade-out.
-	p.mu.Lock()
-	select {
-	case <-p.cancelFade:
-	default:
-		close(p.cancelFade)
-	}
-	p.mu.Unlock()
-
-	// Read current volume level instead of assuming 1.0.
-	speaker.Lock()
-	from := dbToVolume(p.volume.Volume)
-	if p.volume.Silent {
-		from = 0
-	}
-	speaker.Unlock()
-
-	p.fade(from, 0, d)
-}
-
 // Stop immediately stops playback and releases resources.
 func (p *Player) Stop() {
 	if !p.stopped.CompareAndSwap(false, true) {
@@ -134,11 +105,6 @@ func (p *Player) fade(from, to float64, d time.Duration) {
 	for i := 0; i <= steps; i++ {
 		if p.stopped.Load() {
 			return
-		}
-		select {
-		case <-p.cancelFade:
-			return
-		default:
 		}
 		level := from + (to-from)*float64(i)/float64(steps)
 		speaker.Lock()
@@ -159,18 +125,6 @@ func volumeToDb(level float64) float64 {
 		return -10
 	}
 	return math.Log2(level)
-}
-
-// dbToVolume converts a decibel value back to linear volume (0.0–1.0).
-func dbToVolume(db float64) float64 {
-	v := math.Pow(2, db)
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return v
 }
 
 // nopCloserReader wraps a bytes.Reader to satisfy io.ReadCloser.
