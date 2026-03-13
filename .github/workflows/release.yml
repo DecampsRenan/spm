@@ -1,17 +1,24 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'chore: release')"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,18 +33,35 @@ jobs:
         run: |
           git fetch --tags
           LATEST=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          BUMP="${{ inputs.bump_type }}"
           if [ -z "$LATEST" ]; then
             NEXT="v0.1.0"
           else
             MAJOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f1)
             MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
             PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
-            NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            case "$BUMP" in
+              major) NEXT="v$((MAJOR + 1)).0.0" ;;
+              minor) NEXT="v${MAJOR}.$((MINOR + 1)).0" ;;
+              *)     NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
+            esac
           fi
           echo "tag=$NEXT" >> "$GITHUB_OUTPUT"
 
-      - name: Tag and push
+      - name: Update CHANGELOG
+        run: bash scripts/update-changelog.sh "${{ steps.version.outputs.tag }}"
+
+      - name: Commit CHANGELOG and tag
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet CHANGELOG.md; then
+            echo "No CHANGELOG changes to commit."
+          else
+            git add CHANGELOG.md
+            git commit -m "chore: release ${{ steps.version.outputs.tag }}"
+            git push origin HEAD:main
+          fi
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
@@ -47,24 +71,3 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update CHANGELOG
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bash scripts/update-changelog.sh "${{ steps.version.outputs.tag }}"
-          if git diff --quiet CHANGELOG.md; then
-            echo "No CHANGELOG changes to commit."
-          else
-            BRANCH="release/${{ steps.version.outputs.tag }}"
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git checkout -b "$BRANCH"
-            git add CHANGELOG.md
-            git commit -m "chore: release ${{ steps.version.outputs.tag }}"
-            git push origin "$BRANCH"
-            gh pr create --base main --head "$BRANCH" \
-              --title "chore: release ${{ steps.version.outputs.tag }}" \
-              --body "Automated changelog update for ${{ steps.version.outputs.tag }}" \
-              || echo "Warning: could not create PR for changelog update"
-          fi
