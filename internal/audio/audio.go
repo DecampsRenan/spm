@@ -1,5 +1,3 @@
-//go:build cgo
-
 package audio
 
 import (
@@ -8,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/exec"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,6 +20,15 @@ import (
 
 //go:embed tashkent.mp3
 var trackData []byte
+
+//go:embed notification-pop.mp3
+var successSoundData []byte
+
+//go:embed error-001.mp3
+var errorSoundData []byte
+
+//go:embed ding.mp3
+var dingSoundData []byte
 
 // Player manages background audio playback with fade support.
 type Player struct {
@@ -170,3 +179,74 @@ type nopCloserReader struct {
 }
 
 func (nopCloserReader) Close() error { return nil }
+
+// PlayNotification plays a one-shot notification sound (fire-and-forget)
+// via an OS-native audio command so the main process can exit immediately.
+// When vibes is true and success is true, plays the elevator ding instead.
+func PlayNotification(success bool, vibes bool) error {
+	if os.Getenv("SPM_DISABLE_AUDIO") == "1" {
+		return nil
+	}
+
+	var data []byte
+	switch {
+	case vibes && success:
+		data = dingSoundData
+	case success:
+		data = successSoundData
+	default:
+		data = errorSoundData
+	}
+
+	tmpFile, err := writeTempMP3(data)
+	if err != nil {
+		return fmt.Errorf("write notification mp3: %w", err)
+	}
+
+	cmd := osPlayerCmd(tmpFile)
+	if err := cmd.Start(); err != nil {
+		_ = os.Remove(tmpFile)
+		return fmt.Errorf("play notification: %w", err)
+	}
+
+	// Clean up temp file after playback completes in background.
+	go func() {
+		_ = cmd.Wait()
+		_ = os.Remove(tmpFile)
+	}()
+
+	return nil
+}
+
+func writeTempMP3(data []byte) (string, error) {
+	f, err := os.CreateTemp("", "spm-*.mp3")
+	if err != nil {
+		return "", err
+	}
+	if _, err := f.Write(data); err != nil {
+		f.Close()
+		os.Remove(f.Name())
+		return "", err
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(f.Name())
+		return "", err
+	}
+	return f.Name(), nil
+}
+
+func osPlayerCmd(file string) *exec.Cmd {
+	switch runtime.GOOS {
+	case "darwin":
+		return exec.Command("afplay", file)
+	default:
+		// Linux: try paplay first, fall back to aplay.
+		if path, err := exec.LookPath("paplay"); err == nil {
+			return exec.Command(path, file)
+		}
+		if path, err := exec.LookPath("aplay"); err == nil {
+			return exec.Command(path, file)
+		}
+		return exec.Command("ffplay", "-nodisp", "-autoexit", file)
+	}
+}
