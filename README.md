@@ -15,6 +15,7 @@ Stop thinking about which package manager a project uses. Just run `spm install`
 - **Interactive prompt** when multiple lock files are detected
 - **Dry-run mode** to preview commands without executing them
 - **Vibes mode** — play background music while installing dependencies (`--vibes`)
+- **Notification sounds** — play a sound when the command finishes (`--notify`)
 
 ## Installation
 
@@ -60,6 +61,12 @@ spm dev --dry-run
 
 # Install with background music
 spm install --vibes
+
+# Play a sound when the command finishes
+spm install --notify
+
+# Combine vibes and notification
+spm install --vibes --notify
 
 # Show version
 spm --version

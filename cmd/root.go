@@ -3,10 +3,13 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/decampsrenan/spm/internal/audio"
 	"github.com/decampsrenan/spm/internal/detector"
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
@@ -15,6 +18,7 @@ import (
 
 var dryRun bool
 var vibes bool
+var notify bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spm",
@@ -46,15 +50,40 @@ var addCmd = &cobra.Command{
 	},
 }
 
+var playSoundCmd = &cobra.Command{
+	Use:    "_play-sound [name]",
+	Hidden: true,
+	Args:   cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return audio.PlaySound(args[0])
+	},
+}
+
+var playMusicCmd = &cobra.Command{
+	Use:    "_play-music [fade-in-seconds]",
+	Hidden: true,
+	Args:   cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		secs, err := strconv.Atoi(args[0])
+		if err != nil {
+			return fmt.Errorf("invalid fade-in duration: %w", err)
+		}
+		return audio.PlayMusicAndWait(time.Duration(secs) * time.Second)
+	},
+}
+
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print command instead of executing it")
 	rootCmd.PersistentFlags().BoolVar(&vibes, "vibes", false, "Play background music during install")
+	rootCmd.PersistentFlags().BoolVar(&notify, "notify", false, "Play a sound when the command finishes")
 	// Allow unknown flags to pass through to the underlying package manager
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(playSoundCmd)
+	rootCmd.AddCommand(playMusicCmd)
 }
 
 func SetVersion(v string) {
@@ -75,6 +104,7 @@ func Execute() {
 	knownCmds := map[string]bool{
 		"install": true, "i": true, "add": true,
 		"help": true, "completion": true, "version": true,
+		"_play-sound": true, "_play-music": true,
 	}
 
 	if scriptName := firstNonFlagArg(os.Args[1:]); scriptName != "" && !knownCmds[scriptName] {
@@ -128,5 +158,5 @@ func run(command string, extraArgs []string) error {
 	}
 
 	args := resolver.Resolve(det.PM, command, extraArgs)
-	return runner.Run(args, dryRun, vibes && command == "install")
+	return runner.Run(args, dryRun, vibes && command == "install", notify)
 }

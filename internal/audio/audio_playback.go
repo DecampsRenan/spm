@@ -1,4 +1,4 @@
-//go:build cgo
+//go:build darwin || cgo
 
 package audio
 
@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gopxl/beep/v2"
@@ -21,12 +23,20 @@ import (
 //go:embed tashkent.mp3
 var trackData []byte
 
+//go:embed notification-pop.mp3
+var successSoundData []byte
+
+//go:embed error-001.mp3
+var errorSoundData []byte
+
+//go:embed ding.mp3
+var dingSoundData []byte
+
 // Player manages background audio playback with fade support.
 type Player struct {
 	volume     *effects.Volume
 	done       chan struct{}
 	cancelFade chan struct{}
-	initOnce   sync.Once
 	stopped    atomic.Bool
 	mu         sync.Mutex // guards cancelFade
 }
@@ -53,7 +63,7 @@ func (p *Player) Play(fadeIn time.Duration) error {
 	}
 
 	var initErr error
-	p.initOnce.Do(func() {
+	speakerOnce.Do(func() {
 		initErr = speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond))
 	})
 	if initErr != nil {
@@ -98,20 +108,19 @@ func (p *Player) FadeOut(d time.Duration) {
 	default:
 		close(p.cancelFade)
 	}
+	p.cancelFade = make(chan struct{})
 	p.mu.Unlock()
 
-	// Read current volume level instead of assuming 1.0.
 	speaker.Lock()
 	from := dbToVolume(p.volume.Volume)
 	if p.volume.Silent {
 		from = 0
 	}
 	speaker.Unlock()
-
 	p.fade(from, 0, d)
 }
 
-// Stop immediately stops playback and releases resources.
+// Stop immediately silences playback and closes the speaker.
 func (p *Player) Stop() {
 	if !p.stopped.CompareAndSwap(false, true) {
 		return
@@ -170,3 +179,61 @@ type nopCloserReader struct {
 }
 
 func (nopCloserReader) Close() error { return nil }
+
+const fadeOutDuration = 2 * time.Second
+
+// PlayMusicAndWait plays the vibes track with a fade-in, then blocks until
+// SIGTERM is received. On SIGTERM it fades out and exits. This is intended
+// to be called from the hidden _play-music subcommand.
+func PlayMusicAndWait(fadeIn time.Duration) error {
+	p := NewPlayer()
+	if err := p.Play(fadeIn); err != nil {
+		return err
+	}
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM)
+	<-sig
+
+	p.FadeOut(fadeOutDuration)
+	p.Stop()
+	return nil
+}
+
+// PlaySound plays the named embedded sound using beep, blocking until done.
+// This is intended to be called from the hidden _play-sound subcommand.
+func PlaySound(name string) error {
+	var data []byte
+	switch SoundName(name) {
+	case SoundSuccess:
+		data = successSoundData
+	case SoundError:
+		data = errorSoundData
+	case SoundDing:
+		data = dingSoundData
+	default:
+		return fmt.Errorf("unknown sound: %s", name)
+	}
+
+	reader := bytes.NewReader(data)
+	streamer, format, err := mp3.Decode(nopCloserReader{reader})
+	if err != nil {
+		return fmt.Errorf("decode mp3: %w", err)
+	}
+
+	if err := speaker.Init(format.SampleRate, format.SampleRate.N(100*time.Millisecond)); err != nil {
+		return fmt.Errorf("init speaker: %w", err)
+	}
+
+	done := make(chan struct{})
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		close(done)
+	})))
+	<-done
+
+	speaker.Close()
+	return nil
+}
+
+// speakerOnce ensures the speaker is initialised at most once.
+var speakerOnce sync.Once
