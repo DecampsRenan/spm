@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.
+- Extracted contributing instructions into a dedicated `CONTRIBUTING.md` file.
+
 ## [0.2.1] - 2026-03-13
 
 ### Fixed
