@@ -42,7 +42,7 @@
 
 ## About
 
-Ever joined a project and had to check which package manager it uses before running anything? Yeah, us too. 😅
+Ever joined a project and had to check which package manager it uses before running anything? Yeah, me too. 😅
 
 **spm** detects your project's package manager automatically and translates your commands on the fly. Just type `spm install`, `spm add react`, or `spm dev` — it handles the rest.
 
@@ -128,34 +128,11 @@ spm -v
 
 ## Contributing
 
-Contributions are welcome! 🙌
-
-Requires [Go](https://go.dev/) 1.25+ and [just](https://github.com/casey/just).
-
-```sh
-# Clone the repository
-git clone https://github.com/decampsrenan/spm.git
-cd spm
-
-# Install dev tools and git hooks
-just setup
-
-# Run tests
-just test
-
-# Format code
-just fmt
-
-# Build
-just build
-
-# Watch and rebuild on changes
-just dev
-```
+Contributions are welcome! 🙌 Please read the [contributing guide](CONTRIBUTING.md) to get started.
 
 ## Support
 
-Got a question or found something weird? Don't hesitate to [open an issue](https://github.com/DecampsRenan/spm/issues) — we're happy to help! 💬
+Got a question or found something weird? Don't hesitate to [open an issue](https://github.com/DecampsRenan/spm/issues) — I'm happy to help! 💬
 
 ## License
 
