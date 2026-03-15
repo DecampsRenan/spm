@@ -232,30 +232,7 @@ This could also be enabled via an environment variable like `SPM_VERBOSE=1`.
 
 ---
 
-### Issue 10: Support `--global` flag on `spm add`
-
-**Labels:** `enhancement`
-
-**Description:**
-
-Add support for the `--global` (or `-g`) flag when adding packages to install them globally.
-
-| spm (proposed) | npm | yarn | pnpm |
-|---|---|---|---|
-| `spm add foo -g` | `npm install -g foo` | `yarn global add foo` | `pnpm add -g foo` |
-
-**Expected behavior:**
-
-```sh
-spm add typescript --global
-# → installs typescript globally using the detected package manager
-```
-
-Note: For global installs, the command should work even outside of a project directory.
-
----
-
-### Issue 11: Add shell completions (`spm completion bash/zsh/fish`)
+### Issue 10: Add shell completions (`spm completion bash/zsh/fish`)
 
 **Labels:** `enhancement`, `ux`
 
