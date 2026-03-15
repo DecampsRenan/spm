@@ -184,34 +184,9 @@ The output format should match whatever the underlying package manager returns.
 
 ---
 
-### Issue 8: Add `spm exec` and `spm dlx` commands
-
-**Labels:** `enhancement`
-
-**Description:**
-
-Add support for executing binaries without installing them globally. This is the equivalent of `npx`.
-
-| spm (proposed) | npm | yarn | pnpm |
-|---|---|---|---|
-| `spm exec <bin>` | `npx <bin>` | `yarn exec <bin>` | `pnpm exec <bin>` |
-| `spm dlx <pkg>` | `npx <pkg>` | `yarn dlx <pkg>` | `pnpm dlx <pkg>` |
-
-**Expected behavior:**
-
-```sh
-# Run a locally installed binary
-spm exec vitest
-
-# Download and execute a package without installing it
-spm dlx create-react-app my-app
-```
-
----
-
 ## UX / Polish
 
-### Issue 9: Show detected package manager at startup (verbose mode)
+### Issue 8: Show detected package manager at startup (verbose mode)
 
 **Labels:** `enhancement`, `ux`
 
@@ -232,7 +207,7 @@ This could also be enabled via an environment variable like `SPM_VERBOSE=1`.
 
 ---
 
-### Issue 10: Add shell completions (`spm completion bash/zsh/fish`)
+### Issue 9: Add shell completions (`spm completion bash/zsh/fish`)
 
 **Labels:** `enhancement`, `ux`
 
