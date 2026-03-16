@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/decampsrenan/spm/internal/audio"
-	"github.com/mattn/go-isatty"
 )
 
 const (
@@ -64,38 +64,40 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 		}
 	}
 
+	yarn := isYarn(args[0])
+
 	cmd := exec.Command(bin, args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Place the child in its own process group so the terminal SIGINT does
-	// not reach it directly — we forward the signal ourselves.
-	if isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd()) {
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Foreground: true,
-			Ctty:       int(os.Stdin.Fd()),
-		}
-	} else {
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Setpgid: true,
-		}
+	if yarn {
+		// Yarn must NOT be in the foreground process group: when the
+		// terminal delivers SIGINT to the foreground group, yarn's
+		// broken handler sends SIGKILL to its children (e.g. Cypress)
+		// causing crash dialogs. Setpgid isolates yarn so only spm
+		// receives the terminal SIGINT; we then forward SIGTERM.
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	}
 
-	// Intercept SIGINT/SIGTERM so we can forward them to the child's
-	// process group and stop background tasks.
+	// Intercept SIGINT so we can stop background tasks / forward to yarn.
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
+	var interrupted atomic.Bool
+
 	go func() {
-		sig := <-sigCh
+		<-sigCh
+		interrupted.Store(true)
 		if vibesProc != nil {
 			vibesProc.StopImmediately()
 		}
-		if cmd.Process != nil {
-			// Forward to the child's entire process group.
-			_ = syscall.Kill(-cmd.Process.Pid, sig.(syscall.Signal))
+		if yarn && cmd.Process != nil {
+			// Send SIGTERM (not SIGINT) to yarn's process group so
+			// children can shut down gracefully without yarn
+			// SIGKILL-ing them.
+			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 			// Safety net: force-kill after grace period if still alive.
 			go func() {
 				time.Sleep(killGracePeriod)
@@ -126,6 +128,11 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 
 	if runErr != nil {
 		if exitErr, ok := runErr.(*exec.ExitError); ok {
+			// If the user pressed Ctrl+C, always report 130 regardless
+			// of what signal we used to stop the child.
+			if interrupted.Load() {
+				os.Exit(130)
+			}
 			code := exitErr.ExitCode()
 			// When a process is killed by a signal, Go returns -1.
 			// Compute the conventional 128+signal exit code instead.
