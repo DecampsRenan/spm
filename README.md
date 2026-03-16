@@ -49,7 +49,7 @@ Ever joined a project and had to check which package manager it uses before runn
 - 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
 - 📂 **Directory walk-up** — works from any subdirectory in your project
 - 🔄 **Command translation** — maps commands to the correct syntax for each package manager
-- 💬 **Interactive prompt** when multiple lock files are detected
+- 💬 **Interactive prompt** when multiple lock files are detected or no lock file exists
 - 👀 **Dry-run mode** to preview commands without executing them
 - 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
 - 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)

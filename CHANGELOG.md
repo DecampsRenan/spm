@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Interactive prompt to select a package manager when `package.json` exists but no lock file is found.
+
 ### Changed
 
 - Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.
