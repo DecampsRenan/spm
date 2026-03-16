@@ -2,6 +2,8 @@
 
 Go CLI that auto-detects npm/yarn/pnpm and proxies commands.
 
+**Language rule**: This is an open-source project. All code, comments, commit messages, PR descriptions, documentation, and agent output **must** be written in English.
+
 ## Development
 
 ```bash
@@ -13,30 +15,31 @@ just build               # build binary
 
 ## Conventions
 
-- **README (OBLIGATOIRE)**: When adding or changing flags, commands, or user-facing behavior, you **must** update `README.md` (features list + usage examples). The CI reviewer will flag this.
+- **README (REQUIRED)**: When adding or changing flags, commands, or user-facing behavior, you **must** update `README.md` (features list + usage examples). The CI reviewer will flag this.
 - **Tests**: Add or update tests for any new functionality in the corresponding `_test.go` files.
+- **Dry-run (REQUIRED)**: Any new functionality that executes commands or produces side effects must respect the `--dry-run` flag. Ensure `runner.Run` (or any new execution path) short-circuits correctly when `dryRun` is `true`. Tests must cover the dry-run case.
 - **Formatting**: A pre-commit hook runs `goimports` on staged Go files. Run `just setup` after cloning.
 - **CI**: GitHub Actions runs `go test ./... -v -race`, format checks, and cross-platform builds on every PR.
 
-## Changelog (OBLIGATOIRE)
+## Changelog (REQUIRED)
 
-**Toute modification de code DOIT être accompagnée d'une mise à jour du CHANGELOG.**
+**Every code change MUST include an update to the CHANGELOG.**
 
-Avant de soumettre ou pousser des changements :
-1. Ouvrir `CHANGELOG.md`
-2. Ajouter une entrée sous `## [Unreleased]` dans la catégorie appropriée :
-   - **Added** : nouvelles fonctionnalités
-   - **Changed** : modifications de fonctionnalités existantes
-   - **Deprecated** : fonctionnalités bientôt supprimées
-   - **Removed** : fonctionnalités supprimées
-   - **Fixed** : corrections de bugs
-   - **Security** : corrections de vulnérabilités
-3. Le CI **bloquera le merge** si aucune entrée n'est présente dans `[Unreleased]`
-4. Ne jamais modifier les sections versionnées (ex: `[0.1.5]`), uniquement `[Unreleased]`
+Before submitting or pushing changes:
+1. Open `CHANGELOG.md`
+2. Add an entry under `## [Unreleased]` in the appropriate category:
+   - **Added**: new features
+   - **Changed**: changes to existing features
+   - **Deprecated**: features that will be removed soon
+   - **Removed**: features that have been removed
+   - **Fixed**: bug fixes
+   - **Security**: vulnerability fixes
+3. CI **will block the merge** if no entry is present in `[Unreleased]`
+4. Never modify versioned sections (e.g. `[0.1.5]`), only `[Unreleased]`
 
 ## Release
 
-Les releases sont déclenchées **manuellement** via GitHub Actions :
-1. Aller dans **Actions > Release > Run workflow**
-2. Choisir le type de bump : `patch`, `minor`, ou `major`
-3. Le workflow calcule la version, met à jour le changelog, tag, et publie via GoReleaser
+Releases are triggered **manually** via GitHub Actions:
+1. Go to **Actions > Release > Run workflow**
+2. Choose the bump type: `patch`, `minor`, or `major`
+3. The workflow computes the version, updates the changelog, tags, and publishes via GoReleaser

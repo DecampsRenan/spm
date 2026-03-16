@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -93,6 +94,37 @@ func TestDetectNoLockFile(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when no lock file found")
 	}
+
+	var noLock *ErrNoLockFile
+	if !errors.As(err, &noLock) {
+		t.Fatalf("expected ErrNoLockFile, got %T: %v", err, err)
+	}
+	if noLock.Dir != dir {
+		t.Fatalf("expected dir %s, got %s", dir, noLock.Dir)
+	}
+}
+
+func TestDetectWalksUpPastPackageJSONWithoutLockFile(t *testing.T) {
+	root := t.TempDir()
+	touch(t, root, "package.json")
+	touch(t, root, "yarn.lock")
+
+	nested := filepath.Join(root, "packages", "my-lib")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	touch(t, nested, "package.json") // no lock file here
+
+	dets, err := Detect(nested)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Yarn {
+		t.Fatalf("expected yarn from root, got %v", dets)
+	}
+	if dets[0].Dir != root {
+		t.Fatalf("expected dir %s, got %s", root, dets[0].Dir)
+	}
 }
 
 func TestDetectNoPackageJSON(t *testing.T) {
@@ -101,6 +133,26 @@ func TestDetectNoPackageJSON(t *testing.T) {
 	_, err := Detect(dir)
 	if err == nil {
 		t.Fatal("expected error when no package.json found")
+	}
+}
+
+func TestLockFileName(t *testing.T) {
+	tests := []struct {
+		pm   PackageManager
+		want string
+	}{
+		{NPM, "package-lock.json"},
+		{Yarn, "yarn.lock"},
+		{Pnpm, "pnpm-lock.yaml"},
+		{PackageManager("unknown"), ""},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.pm), func(t *testing.T) {
+			got := LockFileName(tt.pm)
+			if got != tt.want {
+				t.Errorf("LockFileName(%s) = %q, want %q", tt.pm, got, tt.want)
+			}
+		})
 	}
 }
 

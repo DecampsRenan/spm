@@ -42,6 +42,32 @@ func TestResolveAdd(t *testing.T) {
 	}
 }
 
+func TestResolveRemove(t *testing.T) {
+	tests := []struct {
+		pm   detector.PackageManager
+		args []string
+		want []string
+	}{
+		{detector.NPM, []string{"react"}, []string{"npm", "uninstall", "react"}},
+		{detector.Yarn, []string{"react"}, []string{"yarn", "remove", "react"}},
+		{detector.Pnpm, []string{"react"}, []string{"pnpm", "remove", "react"}},
+	}
+	for _, tt := range tests {
+		got := Resolve(tt.pm, "remove", tt.args)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("Resolve(%s, remove, %v) = %v, want %v", tt.pm, tt.args, got, tt.want)
+		}
+	}
+}
+
+func TestResolveRemoveWithExtraFlags(t *testing.T) {
+	got := Resolve(detector.NPM, "remove", []string{"react", "--save-dev"})
+	want := []string{"npm", "uninstall", "react", "--save-dev"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestResolveFallbackScript(t *testing.T) {
 	tests := []struct {
 		pm   detector.PackageManager

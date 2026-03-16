@@ -25,6 +25,15 @@ type Detection struct {
 	Dir string
 }
 
+// ErrNoLockFile is returned when a package.json is found but no lock file exists.
+type ErrNoLockFile struct {
+	Dir string
+}
+
+func (e *ErrNoLockFile) Error() string {
+	return fmt.Sprintf("no lock file found in %s", e.Dir)
+}
+
 // Detect walks up from startDir looking for a directory containing package.json
 // and at least one known lock file. It stops at $HOME.
 // Returns all detected package managers in the first matching directory.
@@ -35,8 +44,12 @@ func Detect(startDir string) ([]Detection, error) {
 	}
 
 	dir := startDir
+	var firstPackageJSONDir string
 	for {
 		if hasFile(dir, "package.json") {
+			if firstPackageJSONDir == "" {
+				firstPackageJSONDir = dir
+			}
 			var detections []Detection
 			for lock, pm := range lockFiles {
 				if hasFile(dir, lock) {
@@ -59,7 +72,20 @@ func Detect(startDir string) ([]Detection, error) {
 		dir = parent
 	}
 
+	if firstPackageJSONDir != "" {
+		return nil, &ErrNoLockFile{Dir: firstPackageJSONDir}
+	}
 	return nil, fmt.Errorf("no package.json with a lock file found (searched up to %s)", home)
+}
+
+// LockFileName returns the lock file name for the given package manager.
+func LockFileName(pm PackageManager) string {
+	for name, p := range lockFiles {
+		if p == pm {
+			return name
+		}
+	}
+	return ""
 }
 
 func hasFile(dir, name string) bool {

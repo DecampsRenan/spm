@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
 	"github.com/decampsrenan/spm/internal/runner"
+	"github.com/decampsrenan/spm/internal/scripts"
 )
 
 var dryRun bool
@@ -50,6 +53,69 @@ var addCmd = &cobra.Command{
 	},
 }
 
+var runCmd = &cobra.Command{
+	Use:   "run [script]",
+	Short: "Run a script from package.json",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 {
+			return run(args[0], args[1:])
+		}
+
+		// No script specified — show interactive selection
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("cannot get working directory: %w", err)
+		}
+
+		det, err := detect(cwd)
+		if err != nil {
+			return err
+		}
+
+		scriptList, err := scripts.List(det.Dir)
+		if err != nil {
+			return err
+		}
+		if len(scriptList) == 0 {
+			return fmt.Errorf("no scripts found in package.json")
+		}
+
+		names := make([]string, len(scriptList))
+		cmds := make([]string, len(scriptList))
+		for i, s := range scriptList {
+			names[i] = s.Name
+			cmds[i] = s.Command
+		}
+
+		selected, err := prompt.SelectScript(names, cmds)
+		if err != nil {
+			return err
+		}
+
+		resolved := resolver.Resolve(det.PM, selected, nil)
+		return runner.Run(resolved, dryRun, false, notify)
+	},
+}
+
+var removeCmd = &cobra.Command{
+	Use:   "remove [packages...]",
+	Short: "Remove one or more packages",
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return run("remove", args)
+	},
+}
+
+var cleanCmd = &cobra.Command{
+	Use:   "clean",
+	Short: "Remove node_modules and optionally the lock file",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		lock, _ := cmd.Flags().GetBool("lock")
+		yes, _ := cmd.Flags().GetBool("yes")
+		return runClean(lock, yes)
+	},
+}
+
 var playSoundCmd = &cobra.Command{
 	Use:    "_play-sound [name]",
 	Hidden: true,
@@ -80,8 +146,15 @@ func init() {
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
+	runCmd.FParseErrWhitelist.UnknownFlags = true
+	removeCmd.FParseErrWhitelist.UnknownFlags = true
+	cleanCmd.Flags().Bool("lock", false, "Also remove the lock file")
+	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(playSoundCmd)
 	rootCmd.AddCommand(playMusicCmd)
 }
@@ -102,7 +175,7 @@ func Execute() {
 	// run it as a script. Find the first non-flag argument to determine
 	// the subcommand, so flags like --dry-run can appear before it.
 	knownCmds := map[string]bool{
-		"install": true, "i": true, "add": true,
+		"install": true, "i": true, "add": true, "run": true, "remove": true, "clean": true,
 		"help": true, "completion": true, "version": true,
 		"_play-sound": true, "_play-music": true,
 	}
@@ -136,7 +209,7 @@ func firstNonFlagArg(args []string) string {
 	return ""
 }
 
-func run(command string, extraArgs []string) error {
+func runClean(lock bool, yes bool) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("cannot get working directory: %w", err)
@@ -157,6 +230,84 @@ func run(command string, extraArgs []string) error {
 		}
 	}
 
+	targets := []string{"node_modules"}
+	if lock {
+		lockFile := detector.LockFileName(det.PM)
+		if lockFile != "" {
+			targets = append(targets, lockFile)
+		}
+	}
+
+	fmt.Println("The following will be removed:")
+	for _, t := range targets {
+		fmt.Printf("  %s\n", filepath.Join(det.Dir, t))
+	}
+
+	if dryRun {
+		fmt.Println("(dry-run: nothing was deleted)")
+		return nil
+	}
+
+	if !yes {
+		confirmed, err := prompt.Confirm("Proceed?")
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
+
+	for _, t := range targets {
+		path := filepath.Join(det.Dir, t)
+		if t == "node_modules" {
+			err = os.RemoveAll(path)
+		} else {
+			err = os.Remove(path)
+		}
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove %s: %w", path, err)
+		}
+		if err == nil {
+			fmt.Printf("Removed %s\n", path)
+		}
+	}
+
+	return nil
+}
+
+func run(command string, extraArgs []string) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("cannot get working directory: %w", err)
+	}
+
+	det, err := detect(cwd)
+	if err != nil {
+		return err
+	}
+
 	args := resolver.Resolve(det.PM, command, extraArgs)
 	return runner.Run(args, dryRun, vibes && command == "install", notify)
+}
+
+// detect finds the package manager for the project rooted at cwd.
+// If no lock file exists, it prompts the user to choose one.
+func detect(cwd string) (detector.Detection, error) {
+	detections, err := detector.Detect(cwd)
+
+	var noLock *detector.ErrNoLockFile
+	if errors.As(err, &noLock) {
+		return prompt.SelectFromAll(noLock.Dir)
+	}
+	if err != nil {
+		return detector.Detection{}, err
+	}
+
+	if len(detections) == 1 {
+		return detections[0], nil
+	}
+
+	return prompt.Select(detections)
 }
