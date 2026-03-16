@@ -96,6 +96,9 @@ spm add react
 # Add a dev dependency
 spm add vitest --save-dev
 
+# Remove a package
+spm remove react
+
 # Run a script defined in package.json
 spm dev
 spm test
@@ -133,6 +136,7 @@ spm -v
 | ------------- | ----------------- | --------------- | --------------- |
 | `spm install` | `npm install`     | `yarn install`  | `pnpm install`  |
 | `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  |
+| `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` |
 | `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      |
 
