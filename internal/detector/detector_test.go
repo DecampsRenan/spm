@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -92,6 +93,14 @@ func TestDetectNoLockFile(t *testing.T) {
 	_, err := Detect(dir)
 	if err == nil {
 		t.Fatal("expected error when no lock file found")
+	}
+
+	var noLock *ErrNoLockFile
+	if !errors.As(err, &noLock) {
+		t.Fatalf("expected ErrNoLockFile, got %T: %v", err, err)
+	}
+	if noLock.Dir != dir {
+		t.Fatalf("expected dir %s, got %s", dir, noLock.Dir)
 	}
 }
 

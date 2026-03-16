@@ -25,6 +25,15 @@ type Detection struct {
 	Dir string
 }
 
+// ErrNoLockFile is returned when a package.json is found but no lock file exists.
+type ErrNoLockFile struct {
+	Dir string
+}
+
+func (e *ErrNoLockFile) Error() string {
+	return fmt.Sprintf("no lock file found in %s", e.Dir)
+}
+
 // Detect walks up from startDir looking for a directory containing package.json
 // and at least one known lock file. It stops at $HOME.
 // Returns all detected package managers in the first matching directory.
@@ -46,6 +55,7 @@ func Detect(startDir string) ([]Detection, error) {
 			if len(detections) > 0 {
 				return detections, nil
 			}
+			return nil, &ErrNoLockFile{Dir: dir}
 		}
 
 		if dir == home || dir == "/" {

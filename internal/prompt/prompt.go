@@ -38,3 +38,23 @@ func Select(detections []detector.Detection) (detector.Detection, error) {
 
 	return detector.Detection{}, fmt.Errorf("unexpected selection: %s", choice)
 }
+
+// SelectFromAll asks the user to pick a package manager when no lock file is found.
+func SelectFromAll(projectDir string) (detector.Detection, error) {
+	if !isatty.IsTerminal(os.Stdin.Fd()) && !isatty.IsCygwinTerminal(os.Stdin.Fd()) {
+		return detector.Detection{}, fmt.Errorf("no lock file found but stdin is not a TTY — cannot prompt")
+	}
+
+	options := []string{string(detector.NPM), string(detector.Yarn), string(detector.Pnpm)}
+
+	var choice string
+	err := survey.AskOne(&survey.Select{
+		Message: "No lock file found. Which package manager do you want to use?",
+		Options: options,
+	}, &choice)
+	if err != nil {
+		return detector.Detection{}, err
+	}
+
+	return detector.Detection{PM: detector.PackageManager(choice), Dir: projectDir}, nil
+}
