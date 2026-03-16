@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -59,6 +60,16 @@ var removeCmd = &cobra.Command{
 	},
 }
 
+var cleanCmd = &cobra.Command{
+	Use:   "clean",
+	Short: "Remove node_modules and optionally the lock file",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		lock, _ := cmd.Flags().GetBool("lock")
+		yes, _ := cmd.Flags().GetBool("yes")
+		return runClean(lock, yes)
+	},
+}
+
 var playSoundCmd = &cobra.Command{
 	Use:    "_play-sound [name]",
 	Hidden: true,
@@ -90,9 +101,12 @@ func init() {
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
 	removeCmd.FParseErrWhitelist.UnknownFlags = true
+	cleanCmd.Flags().Bool("lock", false, "Also remove the lock file")
+	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(playSoundCmd)
 	rootCmd.AddCommand(playMusicCmd)
 }
@@ -113,7 +127,7 @@ func Execute() {
 	// run it as a script. Find the first non-flag argument to determine
 	// the subcommand, so flags like --dry-run can appear before it.
 	knownCmds := map[string]bool{
-		"install": true, "i": true, "add": true, "remove": true,
+		"install": true, "i": true, "add": true, "remove": true, "clean": true,
 		"help": true, "completion": true, "version": true,
 		"_play-sound": true, "_play-music": true,
 	}
@@ -145,6 +159,74 @@ func firstNonFlagArg(args []string) string {
 		}
 	}
 	return ""
+}
+
+func runClean(lock bool, yes bool) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("cannot get working directory: %w", err)
+	}
+
+	detections, err := detector.Detect(cwd)
+	if err != nil {
+		return err
+	}
+
+	var det detector.Detection
+	if len(detections) == 1 {
+		det = detections[0]
+	} else {
+		det, err = prompt.Select(detections)
+		if err != nil {
+			return err
+		}
+	}
+
+	targets := []string{"node_modules"}
+	if lock {
+		lockFile := detector.LockFileName(det.PM)
+		if lockFile != "" {
+			targets = append(targets, lockFile)
+		}
+	}
+
+	fmt.Println("The following will be removed:")
+	for _, t := range targets {
+		fmt.Printf("  %s\n", filepath.Join(det.Dir, t))
+	}
+
+	if dryRun {
+		fmt.Println("(dry-run: nothing was deleted)")
+		return nil
+	}
+
+	if !yes {
+		confirmed, err := prompt.Confirm("Proceed?")
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
+
+	for _, t := range targets {
+		path := filepath.Join(det.Dir, t)
+		if t == "node_modules" {
+			err = os.RemoveAll(path)
+		} else {
+			err = os.Remove(path)
+		}
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove %s: %w", path, err)
+		}
+		if err == nil {
+			fmt.Printf("Removed %s\n", path)
+		}
+	}
+
+	return nil
 }
 
 func run(command string, extraArgs []string) error {
