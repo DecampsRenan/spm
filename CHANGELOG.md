@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.
 - Extracted contributing instructions into a dedicated `CONTRIBUTING.md` file.
+- `spm add` and `spm remove` now show contextual error messages when called without packages.
+- `spm clean` now prints "Nothing to remove." when targets don't exist, instead of prompting for removal.
+
+### Fixed
+
+- `spm install` now correctly passes through unknown flags (e.g., `--legacy-peer-deps`, `--frozen-lockfile`) to the underlying package manager.
+- `spm clean` no longer fails when `package.json` exists but no lock file is found.
+- `spm clean` no longer falsely prints "Removed node_modules" when the directory did not exist.
 
 ## [0.2.1] - 2026-03-13
 

@@ -47,7 +47,12 @@ var installCmd = &cobra.Command{
 var addCmd = &cobra.Command{
 	Use:   "add [packages...]",
 	Short: "Add one or more packages",
-	Args:  cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return fmt.Errorf("specify at least one package to add\n\nUsage: spm add <package> [packages...]")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run("add", args)
 	},
@@ -100,7 +105,12 @@ var runCmd = &cobra.Command{
 var removeCmd = &cobra.Command{
 	Use:   "remove [packages...]",
 	Short: "Remove one or more packages",
-	Args:  cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return fmt.Errorf("specify at least one package to remove\n\nUsage: spm remove <package> [packages...]")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run("remove", args)
 	},
@@ -145,6 +155,7 @@ func init() {
 	// Allow unknown flags to pass through to the underlying package manager
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
+	installCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
 	runCmd.FParseErrWhitelist.UnknownFlags = true
 	removeCmd.FParseErrWhitelist.UnknownFlags = true
@@ -215,18 +226,30 @@ func runClean(lock bool, yes bool) error {
 		return fmt.Errorf("cannot get working directory: %w", err)
 	}
 
-	detections, err := detector.Detect(cwd)
-	if err != nil {
-		return err
-	}
-
 	var det detector.Detection
-	if len(detections) == 1 {
-		det = detections[0]
-	} else {
-		det, err = prompt.Select(detections)
+
+	if lock {
+		// Need PM to determine lock file name — use detect() which handles
+		// ErrNoLockFile by prompting and multiple detections by selecting.
+		det, err = detect(cwd)
 		if err != nil {
 			return err
+		}
+	} else {
+		// Only need the project dir for node_modules removal.
+		detections, err := detector.Detect(cwd)
+		var noLock *detector.ErrNoLockFile
+		if errors.As(err, &noLock) {
+			det.Dir = noLock.Dir
+		} else if err != nil {
+			return err
+		} else if len(detections) == 1 {
+			det = detections[0]
+		} else {
+			det, err = prompt.Select(detections)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -238,8 +261,22 @@ func runClean(lock bool, yes bool) error {
 		}
 	}
 
-	fmt.Println("The following will be removed:")
+	// Filter to targets that actually exist on disk.
+	var existing []string
 	for _, t := range targets {
+		path := filepath.Join(det.Dir, t)
+		if _, err := os.Stat(path); err == nil {
+			existing = append(existing, t)
+		}
+	}
+
+	if len(existing) == 0 {
+		fmt.Println("Nothing to remove.")
+		return nil
+	}
+
+	fmt.Println("The following will be removed:")
+	for _, t := range existing {
 		fmt.Printf("  %s\n", filepath.Join(det.Dir, t))
 	}
 
@@ -259,19 +296,17 @@ func runClean(lock bool, yes bool) error {
 		}
 	}
 
-	for _, t := range targets {
+	for _, t := range existing {
 		path := filepath.Join(det.Dir, t)
 		if t == "node_modules" {
 			err = os.RemoveAll(path)
 		} else {
 			err = os.Remove(path)
 		}
-		if err != nil && !os.IsNotExist(err) {
+		if err != nil {
 			return fmt.Errorf("failed to remove %s: %w", path, err)
 		}
-		if err == nil {
-			fmt.Printf("Removed %s\n", path)
-		}
+		fmt.Printf("Removed %s\n", path)
 	}
 
 	return nil
