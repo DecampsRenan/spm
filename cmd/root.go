@@ -210,7 +210,9 @@ func runClean(lock bool, yes bool) error {
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove %s: %w", path, err)
 		}
-		fmt.Printf("Removed %s\n", path)
+		if err == nil {
+			fmt.Printf("Removed %s\n", path)
+		}
 	}
 
 	return nil
