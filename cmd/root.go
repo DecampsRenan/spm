@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -235,21 +236,31 @@ func run(command string, extraArgs []string) error {
 		return fmt.Errorf("cannot get working directory: %w", err)
 	}
 
-	detections, err := detector.Detect(cwd)
+	det, err := detect(cwd)
 	if err != nil {
 		return err
 	}
 
-	var det detector.Detection
-	if len(detections) == 1 {
-		det = detections[0]
-	} else {
-		det, err = prompt.Select(detections)
-		if err != nil {
-			return err
-		}
-	}
-
 	args := resolver.Resolve(det.PM, command, extraArgs)
 	return runner.Run(args, dryRun, vibes && command == "install", notify)
+}
+
+// detect finds the package manager for the project rooted at cwd.
+// If no lock file exists, it prompts the user to choose one.
+func detect(cwd string) (detector.Detection, error) {
+	detections, err := detector.Detect(cwd)
+
+	var noLock *detector.ErrNoLockFile
+	if errors.As(err, &noLock) {
+		return prompt.SelectFromAll(noLock.Dir)
+	}
+	if err != nil {
+		return detector.Detection{}, err
+	}
+
+	if len(detections) == 1 {
+		return detections[0], nil
+	}
+
+	return prompt.Select(detections)
 }

@@ -26,3 +26,10 @@ func TestSelectNonTTY(t *testing.T) {
 		t.Fatal("expected error when stdin is not a TTY")
 	}
 }
+
+func TestSelectFromAllNonTTY(t *testing.T) {
+	_, err := SelectFromAll("/tmp")
+	if err == nil {
+		t.Fatal("expected error when stdin is not a TTY")
+	}
+}
