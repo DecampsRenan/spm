@@ -76,11 +76,11 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 		// terminal delivers SIGINT to the foreground group, yarn's
 		// broken handler sends SIGKILL to its children (e.g. Cypress)
 		// causing crash dialogs. Setpgid isolates yarn so only spm
-		// receives the terminal SIGINT; we then forward SIGTERM.
+		// receives the terminal SIGINT.
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	}
 
-	// Intercept SIGINT so we can stop background tasks / forward to yarn.
+	// Intercept SIGINT so we can stop background tasks / handle yarn.
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
@@ -94,14 +94,18 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 			vibesProc.StopImmediately()
 		}
 		if yarn && cmd.Process != nil {
-			// Send SIGTERM (not SIGINT) to yarn's process group so
-			// children can shut down gracefully without yarn
-			// SIGKILL-ing them.
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
-			// Safety net: force-kill after grace period if still alive.
+			pid := cmd.Process.Pid
+			// Yarn sends SIGKILL to its children on ANY signal
+			// (SIGINT, SIGTERM). To prevent crash dialogs (e.g.
+			// Cypress), we SIGKILL yarn itself first so it cannot
+			// react, then SIGTERM the orphaned children in its
+			// process group so they shut down gracefully.
+			_ = syscall.Kill(pid, syscall.SIGKILL)
+			_ = syscall.Kill(-pid, syscall.SIGTERM)
+			// Safety net: force-kill stragglers after grace period.
 			go func() {
 				time.Sleep(killGracePeriod)
-				_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				_ = syscall.Kill(-pid, syscall.SIGKILL)
 			}()
 		} else {
 			os.Exit(130)
