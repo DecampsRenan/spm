@@ -104,6 +104,26 @@ func TestDetectNoPackageJSON(t *testing.T) {
 	}
 }
 
+func TestLockFileName(t *testing.T) {
+	tests := []struct {
+		pm   PackageManager
+		want string
+	}{
+		{NPM, "package-lock.json"},
+		{Yarn, "yarn.lock"},
+		{Pnpm, "pnpm-lock.yaml"},
+		{PackageManager("unknown"), ""},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.pm), func(t *testing.T) {
+			got := LockFileName(tt.pm)
+			if got != tt.want {
+				t.Errorf("LockFileName(%s) = %q, want %q", tt.pm, got, tt.want)
+			}
+		})
+	}
+}
+
 func touch(t *testing.T, dir, name string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(dir, name), nil, 0o644); err != nil {

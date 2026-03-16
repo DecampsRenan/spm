@@ -105,6 +105,15 @@ spm build
 # Pick a script interactively from package.json
 spm run
 
+# Remove node_modules
+spm clean
+
+# Remove node_modules and the lock file
+spm clean --lock
+
+# Skip the confirmation prompt (useful in CI)
+spm clean --yes
+
 # Preview what would run without executing
 spm dev --dry-run
 
@@ -129,6 +138,7 @@ spm -v
 | `spm install` | `npm install`     | `yarn install`  | `pnpm install`  |
 | `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  |
 | `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* |
+| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      |
 
 ## Contributing
