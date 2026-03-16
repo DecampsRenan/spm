@@ -80,15 +80,22 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		scriptNames, err := scripts.List(det.Dir)
+		scriptList, err := scripts.List(det.Dir)
 		if err != nil {
 			return err
 		}
-		if len(scriptNames) == 0 {
+		if len(scriptList) == 0 {
 			return fmt.Errorf("no scripts found in package.json")
 		}
 
-		selected, err := prompt.SelectScript(scriptNames)
+		names := make([]string, len(scriptList))
+		cmds := make([]string, len(scriptList))
+		for i, s := range scriptList {
+			names[i] = s.Name
+			cmds[i] = s.Command
+		}
+
+		selected, err := prompt.SelectScript(names, cmds)
 		if err != nil {
 			return err
 		}

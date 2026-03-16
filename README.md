@@ -49,6 +49,7 @@ Ever joined a project and had to check which package manager it uses before runn
 - 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
 - 📂 **Directory walk-up** — works from any subdirectory in your project
 - 🔄 **Command translation** — maps commands to the correct syntax for each package manager
+- 🎯 **Interactive script runner** — `spm run` lets you pick a script from package.json
 - 💬 **Interactive prompt** when multiple lock files are detected
 - 👀 **Dry-run mode** to preview commands without executing them
 - 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
@@ -101,6 +102,9 @@ spm dev
 spm test
 spm build
 
+# Pick a script interactively from package.json
+spm run
+
 # Preview what would run without executing
 spm dev --dry-run
 
@@ -124,6 +128,7 @@ spm -v
 | ------------- | ----------------- | --------------- | --------------- |
 | `spm install` | `npm install`     | `yarn install`  | `pnpm install`  |
 | `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  |
+| `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      |
 
 ## Contributing

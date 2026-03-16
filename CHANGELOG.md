@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `spm run` command with interactive script selection from package.json when no script is specified.
+
 ### Changed
 
 - Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.

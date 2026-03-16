@@ -40,19 +40,38 @@ func Select(detections []detector.Detection) (detector.Detection, error) {
 }
 
 // SelectScript asks the user to pick a script from the available list.
-func SelectScript(scripts []string) (string, error) {
+// Each option is displayed as "name — command" with the command truncated if needed.
+func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 	if !isatty.IsTerminal(os.Stdin.Fd()) && !isatty.IsCygwinTerminal(os.Stdin.Fd()) {
 		return "", fmt.Errorf("no script specified and stdin is not a TTY — cannot prompt")
+	}
+
+	const maxCmdLen = 40
+
+	options := make([]string, len(scriptNames))
+	for i, name := range scriptNames {
+		cmd := scriptCmds[i]
+		if len(cmd) > maxCmdLen {
+			cmd = cmd[:maxCmdLen-1] + "…"
+		}
+		options[i] = fmt.Sprintf("%s — %s", name, cmd)
 	}
 
 	var choice string
 	err := survey.AskOne(&survey.Select{
 		Message: "Select a script to run:",
-		Options: scripts,
+		Options: options,
 	}, &choice)
 	if err != nil {
 		return "", err
 	}
 
-	return choice, nil
+	// Extract the script name (everything before " — ")
+	for i, opt := range options {
+		if opt == choice {
+			return scriptNames[i], nil
+		}
+	}
+
+	return "", fmt.Errorf("unexpected selection: %s", choice)
 }

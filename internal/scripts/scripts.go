@@ -8,15 +8,21 @@ import (
 	"sort"
 )
 
-// List reads package.json from dir and returns sorted script names.
-func List(dir string) ([]string, error) {
+// Script holds a script name and its command string.
+type Script struct {
+	Name    string
+	Command string
+}
+
+// List reads package.json from dir and returns sorted scripts.
+func List(dir string) ([]Script, error) {
 	data, err := os.ReadFile(filepath.Join(dir, "package.json"))
 	if err != nil {
 		return nil, fmt.Errorf("cannot read package.json: %w", err)
 	}
 
 	var pkg struct {
-		Scripts map[string]json.RawMessage `json:"scripts"`
+		Scripts map[string]string `json:"scripts"`
 	}
 	if err := json.Unmarshal(data, &pkg); err != nil {
 		return nil, fmt.Errorf("cannot parse package.json: %w", err)
@@ -26,10 +32,12 @@ func List(dir string) ([]string, error) {
 		return nil, nil
 	}
 
-	names := make([]string, 0, len(pkg.Scripts))
-	for name := range pkg.Scripts {
-		names = append(names, name)
+	scripts := make([]Script, 0, len(pkg.Scripts))
+	for name, cmd := range pkg.Scripts {
+		scripts = append(scripts, Script{Name: name, Command: cmd})
 	}
-	sort.Strings(names)
-	return names, nil
+	sort.Slice(scripts, func(i, j int) bool {
+		return scripts[i].Name < scripts[j].Name
+	})
+	return scripts, nil
 }
