@@ -14,6 +14,7 @@ import (
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
 	"github.com/decampsrenan/spm/internal/runner"
+	"github.com/decampsrenan/spm/internal/scripts"
 )
 
 var dryRun bool
@@ -50,6 +51,53 @@ var addCmd = &cobra.Command{
 	},
 }
 
+var runCmd = &cobra.Command{
+	Use:   "run [script]",
+	Short: "Run a script from package.json",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 {
+			return run(args[0], args[1:])
+		}
+
+		// No script specified — show interactive selection
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("cannot get working directory: %w", err)
+		}
+
+		detections, err := detector.Detect(cwd)
+		if err != nil {
+			return err
+		}
+
+		var det detector.Detection
+		if len(detections) == 1 {
+			det = detections[0]
+		} else {
+			det, err = prompt.Select(detections)
+			if err != nil {
+				return err
+			}
+		}
+
+		scriptNames, err := scripts.List(det.Dir)
+		if err != nil {
+			return err
+		}
+		if len(scriptNames) == 0 {
+			return fmt.Errorf("no scripts found in package.json")
+		}
+
+		selected, err := prompt.SelectScript(scriptNames)
+		if err != nil {
+			return err
+		}
+
+		resolved := resolver.Resolve(det.PM, selected, nil)
+		return runner.Run(resolved, dryRun, false, notify)
+	},
+}
+
 var playSoundCmd = &cobra.Command{
 	Use:    "_play-sound [name]",
 	Hidden: true,
@@ -80,8 +128,10 @@ func init() {
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
+	runCmd.FParseErrWhitelist.UnknownFlags = true
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(playSoundCmd)
 	rootCmd.AddCommand(playMusicCmd)
 }
@@ -102,7 +152,7 @@ func Execute() {
 	// run it as a script. Find the first non-flag argument to determine
 	// the subcommand, so flags like --dry-run can appear before it.
 	knownCmds := map[string]bool{
-		"install": true, "i": true, "add": true,
+		"install": true, "i": true, "add": true, "run": true,
 		"help": true, "completion": true, "version": true,
 		"_play-sound": true, "_play-music": true,
 	}

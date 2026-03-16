@@ -18,3 +18,10 @@ func TestSelectNonTTY(t *testing.T) {
 		t.Fatal("expected error when stdin is not a TTY")
 	}
 }
+
+func TestSelectScriptNonTTY(t *testing.T) {
+	_, err := SelectScript([]string{"dev", "build", "test"})
+	if err == nil {
+		t.Fatal("expected error when stdin is not a TTY")
+	}
+}

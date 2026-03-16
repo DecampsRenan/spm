@@ -38,3 +38,21 @@ func Select(detections []detector.Detection) (detector.Detection, error) {
 
 	return detector.Detection{}, fmt.Errorf("unexpected selection: %s", choice)
 }
+
+// SelectScript asks the user to pick a script from the available list.
+func SelectScript(scripts []string) (string, error) {
+	if !isatty.IsTerminal(os.Stdin.Fd()) && !isatty.IsCygwinTerminal(os.Stdin.Fd()) {
+		return "", fmt.Errorf("no script specified and stdin is not a TTY — cannot prompt")
+	}
+
+	var choice string
+	err := survey.AskOne(&survey.Select{
+		Message: "Select a script to run:",
+		Options: scripts,
+	}, &choice)
+	if err != nil {
+		return "", err
+	}
+
+	return choice, nil
+}
