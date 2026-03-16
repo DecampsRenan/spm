@@ -52,6 +52,15 @@ var addCmd = &cobra.Command{
 	},
 }
 
+var removeCmd = &cobra.Command{
+	Use:   "remove [packages...]",
+	Short: "Remove one or more packages",
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return run("remove", args)
+	},
+}
+
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
 	Short: "Remove node_modules and optionally the lock file",
@@ -92,10 +101,12 @@ func init() {
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
+	removeCmd.FParseErrWhitelist.UnknownFlags = true
 	cleanCmd.Flags().Bool("lock", false, "Also remove the lock file")
 	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(playSoundCmd)
 	rootCmd.AddCommand(playMusicCmd)
@@ -117,7 +128,7 @@ func Execute() {
 	// run it as a script. Find the first non-flag argument to determine
 	// the subcommand, so flags like --dry-run can appear before it.
 	knownCmds := map[string]bool{
-		"install": true, "i": true, "add": true, "clean": true,
+		"install": true, "i": true, "add": true, "remove": true, "clean": true,
 		"help": true, "completion": true, "version": true,
 		"_play-sound": true, "_play-music": true,
 	}

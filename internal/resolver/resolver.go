@@ -20,6 +20,14 @@ func Resolve(pm detector.PackageManager, command string, args []string) []string
 			return append([]string{bin, "add"}, args...)
 		}
 
+	case "remove":
+		switch pm {
+		case detector.NPM:
+			return append([]string{bin, "uninstall"}, args...)
+		default:
+			return append([]string{bin, "remove"}, args...)
+		}
+
 	default:
 		// Fallback: treat as a script run
 		switch pm {
