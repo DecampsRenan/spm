@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `spm clean` command to remove `node_modules` and optionally the lock file (`--lock`).
+- `--yes` / `-y` flag on `spm clean` to skip the confirmation prompt (useful in CI).
+
 ### Changed
 
 - Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.
