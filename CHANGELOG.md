@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `spm remove <package>` command to uninstall packages, translating to the correct command for each package manager.
+
 ### Changed
 
 - Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.
