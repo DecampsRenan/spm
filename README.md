@@ -48,6 +48,7 @@ Ever joined a project and had to check which package manager it uses before runn
 
 - 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
 - 📂 **Directory walk-up** — works from any subdirectory in your project
+- 🔀 **Flag pass-through** — unknown flags (e.g. `--legacy-peer-deps`) are forwarded to the underlying package manager
 - 🔄 **Command translation** — maps commands to the correct syntax for each package manager
 - 🎯 **Interactive script runner** — `spm run` lets you pick a script from package.json
 - 💬 **Interactive prompt** when multiple lock files are detected or no lock file exists
@@ -90,6 +91,10 @@ go install github.com/decampsrenan/spm@latest
 ```sh
 # Install dependencies (auto-detects npm/yarn/pnpm)
 spm install
+
+# Pass flags through to the underlying package manager
+spm install --legacy-peer-deps
+spm install --frozen-lockfile
 
 # Add a package
 spm add react
