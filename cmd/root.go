@@ -16,6 +16,7 @@ import (
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
 	"github.com/decampsrenan/spm/internal/runner"
+	"github.com/decampsrenan/spm/internal/scripts"
 )
 
 var dryRun bool
@@ -49,6 +50,50 @@ var addCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run("add", args)
+	},
+}
+
+var runCmd = &cobra.Command{
+	Use:   "run [script]",
+	Short: "Run a script from package.json",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 {
+			return run(args[0], args[1:])
+		}
+
+		// No script specified — show interactive selection
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("cannot get working directory: %w", err)
+		}
+
+		det, err := detect(cwd)
+		if err != nil {
+			return err
+		}
+
+		scriptList, err := scripts.List(det.Dir)
+		if err != nil {
+			return err
+		}
+		if len(scriptList) == 0 {
+			return fmt.Errorf("no scripts found in package.json")
+		}
+
+		names := make([]string, len(scriptList))
+		cmds := make([]string, len(scriptList))
+		for i, s := range scriptList {
+			names[i] = s.Name
+			cmds[i] = s.Command
+		}
+
+		selected, err := prompt.SelectScript(names, cmds)
+		if err != nil {
+			return err
+		}
+
+		resolved := resolver.Resolve(det.PM, selected, nil)
+		return runner.Run(resolved, dryRun, false, notify)
 	},
 }
 
@@ -101,11 +146,13 @@ func init() {
 	// (e.g. spm add react --save-dev, spm dev --port 3000)
 	rootCmd.FParseErrWhitelist.UnknownFlags = true
 	addCmd.FParseErrWhitelist.UnknownFlags = true
+	runCmd.FParseErrWhitelist.UnknownFlags = true
 	removeCmd.FParseErrWhitelist.UnknownFlags = true
 	cleanCmd.Flags().Bool("lock", false, "Also remove the lock file")
 	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(playSoundCmd)
@@ -128,7 +175,7 @@ func Execute() {
 	// run it as a script. Find the first non-flag argument to determine
 	// the subcommand, so flags like --dry-run can appear before it.
 	knownCmds := map[string]bool{
-		"install": true, "i": true, "add": true, "remove": true, "clean": true,
+		"install": true, "i": true, "add": true, "run": true, "remove": true, "clean": true,
 		"help": true, "completion": true, "version": true,
 		"_play-sound": true, "_play-music": true,
 	}

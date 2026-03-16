@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `spm run` command with interactive script selection from package.json when no script is specified.
 - Interactive prompt to select a package manager when `package.json` exists but no lock file is found.
 - `spm remove <package>` command to uninstall packages, translating to the correct command for each package manager.
 - `spm clean` command to remove `node_modules` and optionally the lock file (`--lock`).

@@ -27,6 +27,16 @@ func TestSelectNonTTY(t *testing.T) {
 	}
 }
 
+func TestSelectScriptNonTTY(t *testing.T) {
+	_, err := SelectScript(
+		[]string{"dev", "build", "test"},
+		[]string{"vite", "tsc", "vitest"},
+	)
+	if err == nil {
+		t.Fatal("expected error when stdin is not a TTY")
+	}
+}
+
 func TestSelectFromAllNonTTY(t *testing.T) {
 	_, err := SelectFromAll("/tmp")
 	if err == nil {
