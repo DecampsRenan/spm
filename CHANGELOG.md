@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Yarn commands now use subprocess mode with process-group isolation so that Ctrl+C forwards SIGINT instead of letting Yarn send SIGKILL to children (fixes crash dialogs for tools like Cypress).
+- Signal-killed child processes now report the correct exit code (128+signal) instead of 255.
+
 ### Changed
 
 - Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.

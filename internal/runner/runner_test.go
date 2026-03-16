@@ -3,6 +3,7 @@ package runner
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"testing"
@@ -146,5 +147,81 @@ func TestRunVibesSIGINTExits(t *testing.T) {
 
 	if exitErr.ExitCode() != 130 {
 		t.Errorf("expected exit code 130, got %d", exitErr.ExitCode())
+	}
+}
+
+// TestRunYarnSIGINTExits verifies that when the binary is "yarn" (subprocess
+// mode for signal isolation), SIGINT is properly forwarded and the process
+// exits with code 130 instead of triggering a crash in child processes.
+func TestRunYarnSIGINTExits(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("SIGINT test not supported on Windows")
+	}
+
+	if os.Getenv("TEST_RUN_YARN_SIGINT") == "1" {
+		// We are the subprocess. Run a long sleep via a fake "yarn" script.
+		// The fake yarn binary just execs sleep, simulating yarn running a
+		// long-lived child.
+		_ = Run([]string{"yarn", "60"}, false, false, false)
+		return
+	}
+
+	// Create a fake "yarn" binary that simply execs "sleep $1".
+	tmpDir := t.TempDir()
+	fakeYarn := filepath.Join(tmpDir, "yarn")
+	if err := os.WriteFile(fakeYarn, []byte("#!/bin/sh\nexec sleep \"$1\"\n"), 0o755); err != nil {
+		t.Fatalf("failed to create fake yarn: %v", err)
+	}
+
+	// Launch ourselves as a subprocess with the sentinel env var and the
+	// fake yarn on PATH.
+	cmd := exec.Command(os.Args[0], "-test.run=^TestRunYarnSIGINTExits$")
+	cmd.Env = append(os.Environ(),
+		"TEST_RUN_YARN_SIGINT=1",
+		"SPM_DISABLE_AUDIO=1",
+		"PATH="+tmpDir+":"+os.Getenv("PATH"),
+	)
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start subprocess: %v", err)
+	}
+
+	// Give the subprocess time to start the child.
+	time.Sleep(500 * time.Millisecond)
+
+	// Send SIGINT to the subprocess (spm wrapper).
+	if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
+		t.Fatalf("failed to send SIGINT: %v", err)
+	}
+
+	err := cmd.Wait()
+	if err == nil {
+		t.Fatal("expected subprocess to exit with non-zero code")
+	}
+
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("expected ExitError, got %T: %v", err, err)
+	}
+
+	if exitErr.ExitCode() != 130 {
+		t.Errorf("expected exit code 130, got %d", exitErr.ExitCode())
+	}
+}
+
+func TestIsYarn(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{"yarn", true},
+		{"npm", false},
+		{"pnpm", false},
+		{"/usr/local/bin/yarn", true},
+		{"/usr/local/bin/npm", false},
+	}
+	for _, tt := range tests {
+		if got := isYarn(tt.name); got != tt.want {
+			t.Errorf("isYarn(%q) = %v, want %v", tt.name, got, tt.want)
+		}
 	}
 }
