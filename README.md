@@ -92,7 +92,7 @@ Or with Go:
 go install github.com/decampsrenan/spm@v0.3.0-alpha.1  # replace with the desired alpha tag
 ```
 
-Alpha builds are published automatically on every push to `main` and are cleaned up when a stable release ships.
+Alpha builds are published automatically on every push to `main`.
 
 ### From source
 
