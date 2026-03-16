@@ -50,7 +50,7 @@ Ever joined a project and had to check which package manager it uses before runn
 - 📂 **Directory walk-up** — works from any subdirectory in your project
 - 🔄 **Command translation** — maps commands to the correct syntax for each package manager
 - 🎯 **Interactive script runner** — `spm run` lets you pick a script from package.json
-- 💬 **Interactive prompt** when multiple lock files are detected
+- 💬 **Interactive prompt** when multiple lock files are detected or no lock file exists
 - 👀 **Dry-run mode** to preview commands without executing them
 - 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
 - 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)
