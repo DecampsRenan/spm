@@ -44,8 +44,12 @@ func Detect(startDir string) ([]Detection, error) {
 	}
 
 	dir := startDir
+	var firstPackageJSONDir string
 	for {
 		if hasFile(dir, "package.json") {
+			if firstPackageJSONDir == "" {
+				firstPackageJSONDir = dir
+			}
 			var detections []Detection
 			for lock, pm := range lockFiles {
 				if hasFile(dir, lock) {
@@ -55,7 +59,6 @@ func Detect(startDir string) ([]Detection, error) {
 			if len(detections) > 0 {
 				return detections, nil
 			}
-			return nil, &ErrNoLockFile{Dir: dir}
 		}
 
 		if dir == home || dir == "/" {
@@ -69,6 +72,9 @@ func Detect(startDir string) ([]Detection, error) {
 		dir = parent
 	}
 
+	if firstPackageJSONDir != "" {
+		return nil, &ErrNoLockFile{Dir: firstPackageJSONDir}
+	}
 	return nil, fmt.Errorf("no package.json with a lock file found (searched up to %s)", home)
 }
 

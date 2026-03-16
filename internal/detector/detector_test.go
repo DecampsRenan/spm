@@ -104,6 +104,29 @@ func TestDetectNoLockFile(t *testing.T) {
 	}
 }
 
+func TestDetectWalksUpPastPackageJSONWithoutLockFile(t *testing.T) {
+	root := t.TempDir()
+	touch(t, root, "package.json")
+	touch(t, root, "yarn.lock")
+
+	nested := filepath.Join(root, "packages", "my-lib")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	touch(t, nested, "package.json") // no lock file here
+
+	dets, err := Detect(nested)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Yarn {
+		t.Fatalf("expected yarn from root, got %v", dets)
+	}
+	if dets[0].Dir != root {
+		t.Fatalf("expected dir %s, got %s", root, dets[0].Dir)
+	}
+}
+
 func TestDetectNoPackageJSON(t *testing.T) {
 	dir := t.TempDir()
 
