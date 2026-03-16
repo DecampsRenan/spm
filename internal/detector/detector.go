@@ -78,6 +78,16 @@ func Detect(startDir string) ([]Detection, error) {
 	return nil, fmt.Errorf("no package.json with a lock file found (searched up to %s)", home)
 }
 
+// LockFileName returns the lock file name for the given package manager.
+func LockFileName(pm PackageManager) string {
+	for name, p := range lockFiles {
+		if p == pm {
+			return name
+		}
+	}
+	return ""
+}
+
 func hasFile(dir, name string) bool {
 	info, err := os.Stat(filepath.Join(dir, name))
 	return err == nil && !info.IsDir()
