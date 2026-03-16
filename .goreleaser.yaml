@@ -24,3 +24,4 @@ release:
   github:
     owner: decampsrenan
     name: spm
+  prerelease: auto

@@ -1,0 +1,71 @@
+name: Publish Alpha
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-alpha:
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'chore: release')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check for unreleased changes
+        id: unreleased
+        run: |
+          CONTENT=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | tail -n +2 | sed '$d')
+          if ! echo "$CONTENT" | grep -q '^ *- '; then
+            echo "No unreleased entries. Skipping alpha."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "> **This is a pre-release.** It may be unstable. For the latest stable version, see [Releases](https://github.com/decampsrenan/spm/releases/latest)."
+              echo ""
+              echo "$CONTENT"
+            } > /tmp/alpha-notes.md
+          fi
+
+      - name: Compute alpha version
+        if: steps.unreleased.outputs.has_changes == 'true'
+        id: version
+        run: |
+          git fetch --tags
+          LATEST=$(git tag -l 'v*' --sort=-v:refname | grep -v '-' | head -n1)
+          if [ -z "$LATEST" ]; then
+            NEXT_MINOR="0.1.0"
+          else
+            MAJOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f1)
+            MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
+            NEXT_MINOR="${MAJOR}.$((MINOR + 1)).0"
+          fi
+          TAG="v${NEXT_MINOR}-alpha.${{ github.run_number }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Alpha version: $TAG"
+
+      - name: Create tag
+        if: steps.unreleased.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Run GoReleaser
+        if: steps.unreleased.outputs.has_changes == 'true'
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean --release-notes /tmp/alpha-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

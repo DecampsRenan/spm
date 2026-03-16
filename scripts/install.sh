@@ -2,6 +2,13 @@
 set -euo pipefail
 
 REPO="decampsrenan/spm"
+ALPHA=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --alpha) ALPHA=true ;;
+  esac
+done
 
 # Detect OS
 case "$(uname -s)" in
@@ -17,11 +24,24 @@ case "$(uname -m)" in
   *)       echo "Unsupported architecture: $(uname -m)" && exit 1;;
 esac
 
-# Get latest version
-VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-if [ -z "$VERSION" ]; then
-  echo "Failed to fetch latest version"
-  exit 1
+# Get version
+if [ "$ALPHA" = true ]; then
+  VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" \
+    | grep -E '"tag_name"|"prerelease"' \
+    | paste - - \
+    | grep 'true' \
+    | head -1 \
+    | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+')
+  if [ -z "$VERSION" ]; then
+    echo "No alpha release found"
+    exit 1
+  fi
+else
+  VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+  if [ -z "$VERSION" ]; then
+    echo "Failed to fetch latest version"
+    exit 1
+  fi
 fi
 
 FILENAME="spm_${VERSION#v}_${OS}_${ARCH}.tar.gz"

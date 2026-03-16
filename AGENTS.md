@@ -43,3 +43,5 @@ Releases are triggered **manually** via GitHub Actions:
 1. Go to **Actions > Release > Run workflow**
 2. Choose the bump type: `patch`, `minor`, or `major`
 3. The workflow computes the version, updates the changelog, tags, and publishes via GoReleaser
+
+**Alpha releases** are published automatically on every push to `main` that has entries in `[Unreleased]`. They are cleaned up when a stable release is published.
