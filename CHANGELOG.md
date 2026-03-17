@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Colorized terminal output using Charmbracelet lipgloss — success, error, warning, info, and dim styles throughout the CLI.
-- Spinner animation during package manager detection using Bubbletea.
 - New `internal/ui` package with centralized style definitions and output helpers.
 - Automatic alpha releases published on every push to `main` with unreleased changes.
 - `--alpha` flag on install script to install the latest pre-release version.
