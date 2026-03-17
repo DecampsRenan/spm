@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Automatic alpha releases published on every push to `main` with unreleased changes.
+- `--alpha` flag on install script to install the latest pre-release version.
+
 ## [0.3.0] - 2026-03-16
 
 ### Added

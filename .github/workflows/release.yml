@@ -29,7 +29,7 @@ jobs:
         id: version
         run: |
           git fetch --tags
-          LATEST=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          LATEST=$(git tag -l 'v*' --sort=-v:refname | grep -v '-' | head -n1)
           BUMP="${{ inputs.bump_type }}"
           if [ -z "$LATEST" ]; then
             NEXT="v0.1.0"

@@ -78,6 +78,22 @@ Want to install to a custom directory? No problem:
 INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/decampsrenan/spm/main/scripts/install.sh | bash
 ```
 
+### Alpha builds
+
+Want to try the latest unreleased features? Install the most recent alpha:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/decampsrenan/spm/main/scripts/install.sh | bash -s -- --alpha
+```
+
+Or with Go:
+
+```sh
+go install github.com/decampsrenan/spm@v0.3.0-alpha.1  # replace with the desired alpha tag
+```
+
+Alpha builds are published automatically on every push to `main`.
+
 ### From source
 
 Requires [Go](https://go.dev/) 1.25+.
