@@ -1,0 +1,12 @@
+{
+  "advisories": {
+    "1001": {
+      "module_name": "node-fetch",
+      "severity": "high",
+      "title": "Exposure of Sensitive Information",
+      "url": "https://github.com/advisories/GHSA-nf01",
+      "vulnerable_versions": "<2.6.7",
+      "patched_versions": ">=2.6.7"
+    }
+  }
+}
