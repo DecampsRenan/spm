@@ -4,11 +4,22 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AlecAivazis/survey/v2"
+	"charm.land/huh/v2"
 	"github.com/mattn/go-isatty"
 
 	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/ui"
 )
+
+func theme() huh.Theme {
+	return huh.ThemeFunc(huh.ThemeCharm)
+}
+
+func runField(field huh.Field) error {
+	return huh.NewForm(huh.NewGroup(field)).
+		WithTheme(theme()).
+		Run()
+}
 
 // Confirm asks the user a yes/no question. Returns true if they confirmed.
 func Confirm(message string) (bool, error) {
@@ -17,9 +28,11 @@ func Confirm(message string) (bool, error) {
 	}
 
 	var confirmed bool
-	err := survey.AskOne(&survey.Confirm{
-		Message: message,
-	}, &confirmed)
+	err := runField(
+		huh.NewConfirm().
+			Title(message).
+			Value(&confirmed),
+	)
 	if err != nil {
 		return false, err
 	}
@@ -32,16 +45,18 @@ func Select(detections []detector.Detection) (detector.Detection, error) {
 		return detector.Detection{}, fmt.Errorf("multiple lock files found but stdin is not a TTY — cannot prompt")
 	}
 
-	options := make([]string, len(detections))
+	options := make([]huh.Option[string], len(detections))
 	for i, d := range detections {
-		options[i] = string(d.PM)
+		options[i] = huh.NewOption(string(d.PM), string(d.PM))
 	}
 
 	var choice string
-	err := survey.AskOne(&survey.Select{
-		Message: "Multiple lock files detected. Which package manager?",
-		Options: options,
-	}, &choice)
+	err := runField(
+		huh.NewSelect[string]().
+			Title(ui.Info("Multiple lock files detected.") + " Which package manager?").
+			Options(options...).
+			Value(&choice),
+	)
 	if err != nil {
 		return detector.Detection{}, err
 	}
@@ -64,32 +79,28 @@ func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 
 	const maxCmdLen = 40
 
-	options := make([]string, len(scriptNames))
+	options := make([]huh.Option[int], len(scriptNames))
 	for i, name := range scriptNames {
 		cmd := scriptCmds[i]
 		if len(cmd) > maxCmdLen {
 			cmd = cmd[:maxCmdLen-1] + "…"
 		}
-		options[i] = fmt.Sprintf("%s — %s", name, cmd)
+		label := fmt.Sprintf("%s — %s", name, ui.Dim(cmd))
+		options[i] = huh.NewOption(label, i)
 	}
 
-	var choice string
-	err := survey.AskOne(&survey.Select{
-		Message: "Select a script to run:",
-		Options: options,
-	}, &choice)
+	var choice int
+	err := runField(
+		huh.NewSelect[int]().
+			Title("Select a script to run:").
+			Options(options...).
+			Value(&choice),
+	)
 	if err != nil {
 		return "", err
 	}
 
-	// Extract the script name (everything before " — ")
-	for i, opt := range options {
-		if opt == choice {
-			return scriptNames[i], nil
-		}
-	}
-
-	return "", fmt.Errorf("unexpected selection: %s", choice)
+	return scriptNames[choice], nil
 }
 
 // SelectFromAll asks the user to pick a package manager when no lock file is found.
@@ -98,13 +109,19 @@ func SelectFromAll(projectDir string) (detector.Detection, error) {
 		return detector.Detection{}, fmt.Errorf("no lock file found but stdin is not a TTY — cannot prompt")
 	}
 
-	options := []string{string(detector.NPM), string(detector.Yarn), string(detector.Pnpm)}
+	options := []huh.Option[string]{
+		huh.NewOption(string(detector.NPM), string(detector.NPM)),
+		huh.NewOption(string(detector.Yarn), string(detector.Yarn)),
+		huh.NewOption(string(detector.Pnpm), string(detector.Pnpm)),
+	}
 
 	var choice string
-	err := survey.AskOne(&survey.Select{
-		Message: "No lock file found. Which package manager do you want to use?",
-		Options: options,
-	}, &choice)
+	err := runField(
+		huh.NewSelect[string]().
+			Title(ui.Warning("No lock file found.") + " Which package manager do you want to use?").
+			Options(options...).
+			Value(&choice),
+	)
 	if err != nil {
 		return detector.Detection{}, err
 	}

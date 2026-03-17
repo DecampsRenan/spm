@@ -17,6 +17,7 @@ import (
 	"github.com/decampsrenan/spm/internal/resolver"
 	"github.com/decampsrenan/spm/internal/runner"
 	"github.com/decampsrenan/spm/internal/scripts"
+	"github.com/decampsrenan/spm/internal/ui"
 )
 
 var dryRun bool
@@ -205,7 +206,7 @@ func Execute() {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		ui.Eprintln(ui.Error(err.Error()))
 		os.Exit(1)
 	}
 }
@@ -271,17 +272,17 @@ func runClean(lock bool, yes bool) error {
 	}
 
 	if len(existing) == 0 {
-		fmt.Println("Nothing to remove.")
+		ui.Println(ui.Info("Nothing to remove."))
 		return nil
 	}
 
-	fmt.Println("The following will be removed:")
+	ui.Println(ui.Header("The following will be removed:"))
 	for _, t := range existing {
-		fmt.Printf("  %s\n", filepath.Join(det.Dir, t))
+		ui.Printf("  %s\n", ui.Path(filepath.Join(det.Dir, t)))
 	}
 
 	if dryRun {
-		fmt.Println("(dry-run: nothing was deleted)")
+		ui.Println(ui.Dim("(dry-run: nothing was deleted)"))
 		return nil
 	}
 
@@ -291,7 +292,7 @@ func runClean(lock bool, yes bool) error {
 			return err
 		}
 		if !confirmed {
-			fmt.Println("Aborted.")
+			ui.Println(ui.Dim("Aborted."))
 			return nil
 		}
 	}
@@ -306,7 +307,7 @@ func runClean(lock bool, yes bool) error {
 		if err != nil {
 			return fmt.Errorf("failed to remove %s: %w", path, err)
 		}
-		fmt.Printf("Removed %s\n", path)
+		ui.Println(ui.Success("Removed " + path))
 	}
 
 	return nil

@@ -60,6 +60,7 @@ Ever joined a project and had to check which package manager it uses before runn
 
 - [Go](https://go.dev/)
 - [Cobra](https://github.com/spf13/cobra)
+- [Charmbracelet](https://github.com/charmbracelet) (lipgloss, huh, bubbletea)
 - [Beep](https://github.com/gopxl/beep)
 
 ## Getting Started
@@ -183,6 +184,6 @@ Distributed under the [MIT](LICENSE) license.
 Big thanks to these awesome projects that make spm possible:
 
 - [Cobra](https://github.com/spf13/cobra) — CLI framework
+- [Charmbracelet](https://github.com/charmbracelet) — terminal styling, prompts, and spinner (lipgloss, huh, bubbletea, bubbles)
 - [Beep](https://github.com/gopxl/beep) — audio playback for vibes & notifications
-- [Survey](https://github.com/AlecAivazis/survey) — interactive terminal prompts
 - [go-isatty](https://github.com/mattn/go-isatty) — TTY detection
