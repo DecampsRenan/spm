@@ -14,8 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Colorized terminal output using Charmbracelet lipgloss — success, error, warning, info, and dim styles throughout the CLI.
+- Spinner animation during package manager detection using Bubbletea.
+- New `internal/ui` package with centralized style definitions and output helpers.
 - Automatic alpha releases published on every push to `main` with unreleased changes.
 - `--alpha` flag on install script to install the latest pre-release version.
+
+### Changed
+
+- Replaced `survey/v2` interactive prompts with Charmbracelet `huh/v2` for a modern TUI look.
+- Styled `spm clean` output with colored paths, success checkmarks, and dimmed dry-run notices.
+- Styled `--dry-run` command preview with violet highlighting.
 
 ## [0.3.0] - 2026-03-16
 
