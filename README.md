@@ -1,35 +1,99 @@
-# spm
-
 <!-- NOTE FOR AGENTS: Keep this README up to date when adding new commands,
      flags, or changing behavior. Update the usage examples and feature list. -->
 
-**Smart Package Manager** — a unified CLI that auto-detects your project's JavaScript package manager (npm, yarn, or pnpm) and proxies commands transparently.
+<h1 align="center">
+  📦 spm
+</h1>
 
-Stop thinking about which package manager a project uses. Just run `spm install`, `spm add react`, or `spm dev` and let it figure out the rest.
+<div align="center">
+  <strong>Smart Package Manager</strong> — One CLI to rule them all. Stop worrying about npm vs yarn vs pnpm, just run <code>spm</code> and let it figure out the rest.
+  <br />
+  <br />
+  <a href="https://github.com/DecampsRenan/spm/issues/new?labels=bug&title=bug%3A+">🐛 Report a Bug</a>
+  ·
+  <a href="https://github.com/DecampsRenan/spm/issues/new?labels=enhancement&title=feat%3A+">✨ Request a Feature</a>
+</div>
 
-## Features
+<div align="center">
+<br />
 
-- **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
-- **Directory walk-up** — works from any subdirectory in your project
-- **Command translation** — maps commands to the correct syntax for each package manager
-- **Interactive prompt** when multiple lock files are detected
-- **Dry-run mode** to preview commands without executing them
-- **Vibes mode** — play background music while installing dependencies (`--vibes`)
-- **Notification sounds** — play a sound when the command finishes (`--notify`)
+[![GitHub release](https://img.shields.io/github/v/release/DecampsRenan/spm?style=flat-square)](https://github.com/DecampsRenan/spm/releases) [![CI](https://img.shields.io/github/actions/workflow/status/DecampsRenan/spm/ci.yml?branch=main&style=flat-square)](https://github.com/DecampsRenan/spm/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/DecampsRenan/spm?style=flat-square)](LICENSE)
 
-## Installation
+</div>
+
+<details open="open">
+<summary>Table of Contents</summary>
+
+- [About](#about)
+  - [Built With](#built-with)
+- [Getting Started](#getting-started)
+  - [Install script (macOS / Linux)](#install-script-macos--linux)
+  - [From source](#from-source)
+- [Usage](#usage)
+  - [Command mapping](#command-mapping)
+- [Contributing](#contributing)
+- [Support](#support)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+</details>
+
+---
+
+## About
+
+Ever joined a project and had to check which package manager it uses before running anything? Yeah, me too. 😅
+
+**spm** detects your project's package manager automatically and translates your commands on the fly. Just type `spm install`, `spm add react`, or `spm dev` — it handles the rest.
+
+- 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
+- 📂 **Directory walk-up** — works from any subdirectory in your project
+- 🔀 **Flag pass-through** — unknown flags (e.g. `--legacy-peer-deps`) are forwarded to the underlying package manager
+- 🔄 **Command translation** — maps commands to the correct syntax for each package manager
+- 🎯 **Interactive script runner** — `spm run` lets you pick a script from package.json
+- 💬 **Interactive prompt** when multiple lock files are detected or no lock file exists
+- 👀 **Dry-run mode** to preview commands without executing them
+- 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
+- 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)
+
+### Built With
+
+- [Go](https://go.dev/)
+- [Cobra](https://github.com/spf13/cobra)
+- [Charmbracelet](https://github.com/charmbracelet) (lipgloss, huh, bubbletea)
+- [Beep](https://github.com/gopxl/beep)
+
+## Getting Started
 
 ### Install script (macOS / Linux)
+
+The fastest way to get started:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/decampsrenan/spm/main/scripts/install.sh | bash
 ```
 
-To install to a custom directory:
+Want to install to a custom directory? No problem:
 
 ```sh
 INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/decampsrenan/spm/main/scripts/install.sh | bash
 ```
+
+### Alpha builds
+
+Want to try the latest unreleased features? Install the most recent alpha:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/decampsrenan/spm/main/scripts/install.sh | bash -s -- --alpha
+```
+
+Or with Go:
+
+```sh
+go install github.com/decampsrenan/spm@v0.3.0-alpha.1  # replace with the desired alpha tag
+```
+
+Alpha builds are published automatically on every push to `main`.
 
 ### From source
 
@@ -45,21 +109,40 @@ go install github.com/decampsrenan/spm@latest
 # Install dependencies (auto-detects npm/yarn/pnpm)
 spm install
 
+# Pass flags through to the underlying package manager
+spm install --legacy-peer-deps
+spm install --frozen-lockfile
+
 # Add a package
 spm add react
 
 # Add a dev dependency
 spm add vitest --save-dev
 
+# Remove a package
+spm remove react
+
 # Run a script defined in package.json
 spm dev
 spm test
 spm build
 
+# Pick a script interactively from package.json
+spm run
+
+# Remove node_modules
+spm clean
+
+# Remove node_modules and the lock file
+spm clean --lock
+
+# Skip the confirmation prompt (useful in CI)
+spm clean --yes
+
 # Preview what would run without executing
 spm dev --dry-run
 
-# Install with background music
+# Install with background music 🎶
 spm install --vibes
 
 # Play a sound when the command finishes
@@ -75,41 +158,32 @@ spm -v
 
 ### Command mapping
 
-| spm command   | npm                   | yarn            | pnpm            |
-| ------------- | --------------------- | --------------- | --------------- |
-| `spm install` | `npm install`         | `yarn install`  | `pnpm install`  |
-| `spm add foo` | `npm install foo`     | `yarn add foo`  | `pnpm add foo`  |
-| `spm dev`     | `npm run dev`         | `yarn dev`      | `pnpm dev`      |
-
-## Support
-
-Found a bug or have a question? [Open an issue](https://github.com/decampsrenan/spm/issues).
+| spm command   | npm               | yarn            | pnpm            |
+| ------------- | ----------------- | --------------- | --------------- |
+| `spm install` | `npm install`     | `yarn install`  | `pnpm install`  |
+| `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  |
+| `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* |
+| `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` |
+| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |
+| `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      |
 
 ## Contributing
 
-Requires [Go](https://go.dev/) 1.25+ and [just](https://github.com/casey/just).
+Contributions are welcome! 🙌 Please read the [contributing guide](CONTRIBUTING.md) to get started.
 
-```sh
-# Clone the repository
-git clone https://github.com/decampsrenan/spm.git
-cd spm
+## Support
 
-# Install dev tools and git hooks
-just setup
-
-# Run tests
-just test
-
-# Format code
-just fmt
-
-# Build
-just build
-
-# Watch and rebuild on changes
-just dev
-```
+Got a question or found something weird? Don't hesitate to [open an issue](https://github.com/DecampsRenan/spm/issues) — I'm happy to help! 💬
 
 ## License
 
-[MIT](LICENSE)
+Distributed under the [MIT](LICENSE) license.
+
+## Acknowledgements
+
+Big thanks to these awesome projects that make spm possible:
+
+- [Cobra](https://github.com/spf13/cobra) — CLI framework
+- [Charmbracelet](https://github.com/charmbracelet) — terminal styling, prompts, and spinner (lipgloss, huh, bubbletea, bubbles)
+- [Beep](https://github.com/gopxl/beep) — audio playback for vibes & notifications
+- [go-isatty](https://github.com/mattn/go-isatty) — TTY detection

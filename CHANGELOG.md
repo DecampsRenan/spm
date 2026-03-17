@@ -12,6 +12,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Colorized terminal output using Charmbracelet lipgloss — success, error, warning, info, and dim styles throughout the CLI.
+- New `internal/ui` package with centralized style definitions and output helpers.
+- Automatic alpha releases published on every push to `main` with unreleased changes.
+- `--alpha` flag on install script to install the latest pre-release version.
+
+### Changed
+
+- Replaced `survey/v2` interactive prompts with Charmbracelet `huh/v2` for a modern TUI look.
+- Styled `spm clean` output with colored paths, success checkmarks, and dimmed dry-run notices.
+- Styled `--dry-run` command preview with violet highlighting.
+
+## [0.3.0] - 2026-03-16
+
+### Added
+
+- `spm run` command with interactive script selection from package.json when no script is specified.
+- Interactive prompt to select a package manager when `package.json` exists but no lock file is found.
+- `spm remove <package>` command to uninstall packages, translating to the correct command for each package manager.
+- `spm clean` command to remove `node_modules` and optionally the lock file (`--lock`).
+- `--yes` / `-y` flag on `spm clean` to skip the confirmation prompt (useful in CI).
+
+### Changed
+
+- Revamped README with modern layout, badges, friendly tone, and collapsible table of contents.
+- Extracted contributing instructions into a dedicated `CONTRIBUTING.md` file.
+- `spm add` and `spm remove` now show contextual error messages when called without packages.
+- `spm clean` now prints "Nothing to remove." when targets don't exist, instead of prompting for removal.
+
+### Fixed
+
+- `spm install` now correctly passes through unknown flags (e.g., `--legacy-peer-deps`, `--frozen-lockfile`) to the underlying package manager.
+- `spm clean` no longer fails when `package.json` exists but no lock file is found.
+- `spm clean` no longer falsely prints "Removed node_modules" when the directory did not exist.
+
 ## [0.2.1] - 2026-03-13
 
 ### Fixed
@@ -72,7 +108,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform build configuration via GoReleaser (linux/darwin × amd64/arm64).
 - Curl-based installation script (`scripts/install.sh`).
 
-[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/DecampsRenan/spm/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/DecampsRenan/spm/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/DecampsRenan/spm/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/DecampsRenan/spm/compare/v0.1.0...v0.1.5

@@ -5,11 +5,11 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/decampsrenan/spm/internal/audio"
+	"github.com/decampsrenan/spm/internal/ui"
 )
 
 const fadeDuration = 3 * time.Second
@@ -24,7 +24,7 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	}
 
 	if dryRun {
-		fmt.Printf("Would run: %s\n", strings.Join(args, " "))
+		ui.Println(ui.Command(args))
 		return nil
 	}
 
@@ -44,7 +44,7 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 		var err error
 		vibesProc, err = audio.StartVibes(fadeDuration)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "warning: could not play music: %v\n", err)
+			ui.Eprintln(ui.Warning(fmt.Sprintf("could not play music: %v", err)))
 		}
 	}
 
