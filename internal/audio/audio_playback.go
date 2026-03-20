@@ -4,6 +4,7 @@ package audio
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"fmt"
 	"math"
@@ -193,7 +194,32 @@ func PlayMusicAndWait(fadeIn time.Duration) error {
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
-	<-sig
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	orphanCh := make(chan struct{})
+	origPPID := os.Getppid()
+	go func() {
+		ticker := time.NewTicker(500 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if os.Getppid() != origPPID {
+					close(orphanCh)
+					return
+				}
+			}
+		}
+	}()
+
+	select {
+	case <-sig:
+	case <-orphanCh:
+	}
 
 	p.FadeOut(fadeOutDuration)
 	p.Stop()
