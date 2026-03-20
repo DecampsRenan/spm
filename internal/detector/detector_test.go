@@ -49,6 +49,49 @@ func TestDetectPnpm(t *testing.T) {
 	}
 }
 
+func TestDetectBun(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "package.json")
+	touch(t, dir, "bun.lock")
+
+	dets, err := Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Bun {
+		t.Fatalf("expected bun, got %v", dets)
+	}
+}
+
+func TestDetectBunLegacy(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "package.json")
+	touch(t, dir, "bun.lockb")
+
+	dets, err := Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Bun {
+		t.Fatalf("expected bun, got %v", dets)
+	}
+}
+
+func TestDetectBunBothLockFiles(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "package.json")
+	touch(t, dir, "bun.lock")
+	touch(t, dir, "bun.lockb")
+
+	dets, err := Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Bun {
+		t.Fatalf("expected single bun detection, got %v", dets)
+	}
+}
+
 func TestDetectWalksUp(t *testing.T) {
 	root := t.TempDir()
 	touch(t, root, "package.json")
@@ -144,6 +187,7 @@ func TestLockFileName(t *testing.T) {
 		{NPM, "package-lock.json"},
 		{Yarn, "yarn.lock"},
 		{Pnpm, "pnpm-lock.yaml"},
+		{Bun, "bun.lock"},
 		{PackageManager("unknown"), ""},
 	}
 	for _, tt := range tests {

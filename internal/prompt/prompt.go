@@ -113,6 +113,7 @@ func SelectFromAll(projectDir string) (detector.Detection, error) {
 		huh.NewOption(string(detector.NPM), string(detector.NPM)),
 		huh.NewOption(string(detector.Yarn), string(detector.Yarn)),
 		huh.NewOption(string(detector.Pnpm), string(detector.Pnpm)),
+		huh.NewOption(string(detector.Bun), string(detector.Bun)),
 	}
 
 	var choice string
