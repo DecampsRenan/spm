@@ -1,6 +1,35 @@
 package audit
 
-import "testing"
+import (
+	"bytes"
+	"os"
+	"testing"
+)
+
+func TestRunDryRun(t *testing.T) {
+	// Capture stdout to verify dry-run message.
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	exitCode, err := Run("npm", t.TempDir(), Options{DryRun: true})
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if exitCode != ExitClean {
+		t.Errorf("expected exit code %d, got %d", ExitClean, exitCode)
+	}
+	if out := buf.String(); out == "" {
+		t.Error("expected dry-run output, got empty string")
+	}
+}
 
 func TestFilterBySeverity(t *testing.T) {
 	result := &AuditResult{
