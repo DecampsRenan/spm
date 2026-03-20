@@ -34,7 +34,7 @@ func Resolve(pm detector.PackageManager, command string, args []string) []string
 		case detector.NPM:
 			return append([]string{bin, "run", command}, args...)
 		default:
-			// yarn and pnpm don't need explicit "run"
+			// yarn, pnpm, and bun don't need explicit "run"
 			return append([]string{bin, command}, args...)
 		}
 	}
