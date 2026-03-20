@@ -12,12 +12,15 @@ const (
 	NPM  PackageManager = "npm"
 	Yarn PackageManager = "yarn"
 	Pnpm PackageManager = "pnpm"
+	Bun  PackageManager = "bun"
 )
 
 var lockFiles = map[string]PackageManager{
 	"package-lock.json": NPM,
 	"yarn.lock":         Yarn,
 	"pnpm-lock.yaml":    Pnpm,
+	"bun.lock":          Bun,
+	"bun.lockb":         Bun,
 }
 
 type Detection struct {
@@ -51,8 +54,10 @@ func Detect(startDir string) ([]Detection, error) {
 				firstPackageJSONDir = dir
 			}
 			var detections []Detection
+			seen := make(map[PackageManager]bool)
 			for lock, pm := range lockFiles {
-				if hasFile(dir, lock) {
+				if hasFile(dir, lock) && !seen[pm] {
+					seen[pm] = true
 					detections = append(detections, Detection{PM: pm, Dir: dir})
 				}
 			}
@@ -80,6 +85,12 @@ func Detect(startDir string) ([]Detection, error) {
 
 // LockFileName returns the lock file name for the given package manager.
 func LockFileName(pm PackageManager) string {
+	// Bun has two lock files (bun.lock and legacy bun.lockb) in the map.
+	// Go map iteration is non-deterministic, so we return the recommended
+	// modern format explicitly to avoid returning the legacy binary one.
+	if pm == Bun {
+		return "bun.lock"
+	}
 	for name, p := range lockFiles {
 		if p == pm {
 			return name

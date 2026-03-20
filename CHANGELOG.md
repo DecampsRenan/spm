@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Bun package manager support — detects `bun.lock` and legacy `bun.lockb` lock files, with deduplication when both are present.
 - Colorized terminal output using Charmbracelet lipgloss — success, error, warning, info, and dim styles throughout the CLI.
 - New `internal/ui` package with centralized style definitions and output helpers.
 - Automatic alpha releases published on every push to `main` with unreleased changes.
