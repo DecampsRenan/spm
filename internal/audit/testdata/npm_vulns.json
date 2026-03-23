@@ -1,0 +1,40 @@
+{
+  "vulnerabilities": {
+    "lodash": {
+      "name": "lodash",
+      "severity": "high",
+      "via": [
+        {
+          "title": "Prototype Pollution",
+          "url": "https://github.com/advisories/GHSA-jf85-cpcp-j695"
+        }
+      ],
+      "range": "<4.17.21",
+      "fixAvailable": true
+    },
+    "minimist": {
+      "name": "minimist",
+      "severity": "critical",
+      "via": [
+        {
+          "title": "Prototype Pollution",
+          "url": "https://github.com/advisories/GHSA-xvch-5gv4-984h"
+        }
+      ],
+      "range": "<1.2.6",
+      "fixAvailable": true
+    },
+    "debug": {
+      "name": "debug",
+      "severity": "low",
+      "via": [
+        {
+          "title": "Regular Expression Denial of Service",
+          "url": "https://github.com/advisories/GHSA-9vvw-cc9w-f27h"
+        }
+      ],
+      "range": "<2.6.9",
+      "fixAvailable": true
+    }
+  }
+}
