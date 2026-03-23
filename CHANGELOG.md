@@ -12,16 +12,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-20
+
 ### Added
 
 - `spm audit` command — runs a security audit and normalizes output across npm, yarn (classic & Berry), and pnpm.
 - `--prod-only` flag on `spm audit` to skip dev dependencies.
 - `--json` flag on `spm audit` for machine-readable output.
 - `--severity` flag on `spm audit` to filter by minimum severity level (info, low, moderate, high, critical).
+- Bun package manager support — detects `bun.lock` and legacy `bun.lockb` lock files, with deduplication when both are present.
 - Colorized terminal output using Charmbracelet lipgloss — success, error, warning, info, and dim styles throughout the CLI.
 - New `internal/ui` package with centralized style definitions and output helpers.
 - Automatic alpha releases published on every push to `main` with unreleased changes.
 - `--alpha` flag on install script to install the latest pre-release version.
+
+### Fixed
+
+- Kill vibes music subprocess when parent process dies (orphan detection via PPID polling).
+- Handle SIGTERM in runner process, exiting with code 143.
 
 ### Changed
 
@@ -112,7 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform build configuration via GoReleaser (linux/darwin × amd64/arm64).
 - Curl-based installation script (`scripts/install.sh`).
 
-[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/DecampsRenan/spm/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DecampsRenan/spm/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/DecampsRenan/spm/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/DecampsRenan/spm/compare/v0.1.5...v0.2.0

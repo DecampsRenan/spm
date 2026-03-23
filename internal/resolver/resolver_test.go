@@ -15,6 +15,7 @@ func TestResolveInstall(t *testing.T) {
 		{detector.NPM, []string{"npm", "install"}},
 		{detector.Yarn, []string{"yarn", "install"}},
 		{detector.Pnpm, []string{"pnpm", "install"}},
+		{detector.Bun, []string{"bun", "install"}},
 	}
 	for _, tt := range tests {
 		got := Resolve(tt.pm, "install", nil)
@@ -33,6 +34,7 @@ func TestResolveAdd(t *testing.T) {
 		{detector.NPM, []string{"react"}, []string{"npm", "install", "react"}},
 		{detector.Yarn, []string{"react"}, []string{"yarn", "add", "react"}},
 		{detector.Pnpm, []string{"react"}, []string{"pnpm", "add", "react"}},
+		{detector.Bun, []string{"react"}, []string{"bun", "add", "react"}},
 	}
 	for _, tt := range tests {
 		got := Resolve(tt.pm, "add", tt.args)
@@ -51,6 +53,7 @@ func TestResolveRemove(t *testing.T) {
 		{detector.NPM, []string{"react"}, []string{"npm", "uninstall", "react"}},
 		{detector.Yarn, []string{"react"}, []string{"yarn", "remove", "react"}},
 		{detector.Pnpm, []string{"react"}, []string{"pnpm", "remove", "react"}},
+		{detector.Bun, []string{"react"}, []string{"bun", "remove", "react"}},
 	}
 	for _, tt := range tests {
 		got := Resolve(tt.pm, "remove", tt.args)
@@ -77,6 +80,7 @@ func TestResolveFallbackScript(t *testing.T) {
 		{detector.NPM, "dev", []string{"npm", "run", "dev"}},
 		{detector.Yarn, "dev", []string{"yarn", "dev"}},
 		{detector.Pnpm, "dev", []string{"pnpm", "dev"}},
+		{detector.Bun, "dev", []string{"bun", "dev"}},
 	}
 	for _, tt := range tests {
 		got := Resolve(tt.pm, tt.cmd, nil)

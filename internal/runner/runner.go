@@ -55,13 +55,16 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 
 	// Intercept SIGINT so we can stop background tasks before exiting.
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
 	go func() {
-		<-sigCh
+		s := <-sigCh
 		if vibesProc != nil {
 			vibesProc.StopImmediately()
+		}
+		if s == syscall.SIGTERM {
+			os.Exit(143)
 		}
 		os.Exit(130)
 	}()

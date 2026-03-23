@@ -26,7 +26,7 @@ var notify bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spm",
-	Short: "Smart Package Manager — auto-detects npm/yarn/pnpm and proxies commands",
+	Short: "Smart Package Manager — auto-detects npm/yarn/pnpm/bun and proxies commands",
 	// Running `spm` with no args is equivalent to `spm install`
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run("install", args)

@@ -6,7 +6,7 @@
 </h1>
 
 <div align="center">
-  <strong>Smart Package Manager</strong> — One CLI to rule them all. Stop worrying about npm vs yarn vs pnpm, just run <code>spm</code> and let it figure out the rest.
+  <strong>Smart Package Manager</strong> — One CLI to rule them all. Stop worrying about npm vs yarn vs pnpm vs bun, just run <code>spm</code> and let it figure out the rest.
   <br />
   <br />
   <a href="https://github.com/DecampsRenan/spm/issues/new?labels=bug&title=bug%3A+">🐛 Report a Bug</a>
@@ -46,7 +46,7 @@ Ever joined a project and had to check which package manager it uses before runn
 
 **spm** detects your project's package manager automatically and translates your commands on the fly. Just type `spm install`, `spm add react`, or `spm dev` — it handles the rest.
 
-- 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
+- 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`)
 - 📂 **Directory walk-up** — works from any subdirectory in your project
 - 🔀 **Flag pass-through** — unknown flags (e.g. `--legacy-peer-deps`) are forwarded to the underlying package manager
 - 🔄 **Command translation** — maps commands to the correct syntax for each package manager
@@ -107,7 +107,7 @@ go install github.com/decampsrenan/spm@latest
 ## Usage
 
 ```sh
-# Install dependencies (auto-detects npm/yarn/pnpm)
+# Install dependencies (auto-detects npm/yarn/pnpm/bun)
 spm install
 
 # Pass flags through to the underlying package manager
@@ -174,15 +174,15 @@ spm -v
 
 ### Command mapping
 
-| spm command   | npm               | yarn            | pnpm            |
-| ------------- | ----------------- | --------------- | --------------- |
-| `spm install` | `npm install`     | `yarn install`  | `pnpm install`  |
-| `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  |
-| `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* |
-| `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` |
-| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |
-| `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |
-| `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      |
+| spm command   | npm               | yarn            | pnpm            | bun             |
+| ------------- | ----------------- | --------------- | --------------- | --------------- |
+| `spm install` | `npm install`     | `yarn install`  | `pnpm install`  | `bun install`   |
+| `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  | `bun add foo`   |
+| `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* |
+| `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` |
+| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |
+| `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |                 |
+| `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       |
 
 ## Contributing
 

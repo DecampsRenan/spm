@@ -148,3 +148,42 @@ func TestRunVibesSIGINTExits(t *testing.T) {
 		t.Errorf("expected exit code 130, got %d", exitErr.ExitCode())
 	}
 }
+
+// TestRunVibesSIGTERMExits verifies that sending SIGTERM to the runner process
+// causes it to exit with code 143 (128 + 15, the standard SIGTERM exit code).
+func TestRunVibesSIGTERMExits(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("SIGTERM test not supported on Windows")
+	}
+
+	if os.Getenv("TEST_RUN_VIBES_SIGTERM") == "1" {
+		_ = Run([]string{"sleep", "60"}, false, true, false)
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=^TestRunVibesSIGTERMExits$")
+	cmd.Env = append(os.Environ(), "TEST_RUN_VIBES_SIGTERM=1", "SPM_DISABLE_AUDIO=1")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start subprocess: %v", err)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+
+	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatalf("failed to send SIGTERM: %v", err)
+	}
+
+	err := cmd.Wait()
+	if err == nil {
+		t.Fatal("expected subprocess to exit with non-zero code")
+	}
+
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("expected ExitError, got %T: %v", err, err)
+	}
+
+	if exitErr.ExitCode() != 143 {
+		t.Errorf("expected exit code 143, got %d", exitErr.ExitCode())
+	}
+}
