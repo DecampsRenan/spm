@@ -27,6 +27,7 @@
 - [About](#about)
   - [Built With](#built-with)
 - [Getting Started](#getting-started)
+  - [Homebrew (macOS / Linux)](#homebrew-macos--linux)
   - [Install script (macOS / Linux)](#install-script-macos--linux)
   - [From source](#from-source)
 - [Usage](#usage)
@@ -64,6 +65,12 @@ Ever joined a project and had to check which package manager it uses before runn
 - [Beep](https://github.com/gopxl/beep)
 
 ## Getting Started
+
+### Homebrew (macOS / Linux)
+
+```sh
+brew install decampsrenan/tap/spm
+```
 
 ### Install script (macOS / Linux)
 
