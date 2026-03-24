@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Homebrew tap distribution — install via `brew install decampsrenan/tap/spm`.
+
 ## [0.4.0] - 2026-03-20
 
 ### Added
