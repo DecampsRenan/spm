@@ -56,6 +56,7 @@ Ever joined a project and had to check which package manager it uses before runn
 - 👀 **Dry-run mode** to preview commands without executing them
 - 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
 - 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)
+- 🔒 **Security audit** — `spm audit` runs a dependency audit and normalizes output across npm/yarn/pnpm
 
 ### Built With
 
@@ -158,6 +159,21 @@ spm install --notify
 # Combine vibes and notification
 spm install --vibes --notify
 
+# Run a security audit on dependencies
+spm audit
+
+# Audit only production dependencies
+spm audit --prod-only
+
+# Output audit results as JSON
+spm audit --json
+
+# Only report high and critical vulnerabilities
+spm audit --severity high
+
+# Preview the audit command without running it
+spm audit --dry-run
+
 # Show version
 spm --version
 spm -v
@@ -172,6 +188,7 @@ spm -v
 | `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* |
 | `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` |
 | `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |
+| `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |                 |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       |
 
 ## Contributing

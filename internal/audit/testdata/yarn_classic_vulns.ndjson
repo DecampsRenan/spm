@@ -1,0 +1,4 @@
+{"type":"info","data":"npm audit security report"}
+{"type":"auditAdvisory","data":{"advisory":{"module_name":"tar","severity":"high","title":"Arbitrary File Creation/Overwrite","url":"https://github.com/advisories/GHSA-tar1","vulnerable_versions":"<6.1.9","patched_versions":">=6.1.9"}}}
+{"type":"auditAdvisory","data":{"advisory":{"module_name":"glob-parent","severity":"moderate","title":"Regular Expression Denial of Service","url":"https://github.com/advisories/GHSA-glob1","vulnerable_versions":"<5.1.2","patched_versions":">=5.1.2"}}}
+{"type":"auditSummary","data":{"vulnerabilities":{"info":0,"low":0,"moderate":1,"high":1,"critical":0}}}
