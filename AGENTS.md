@@ -1,6 +1,6 @@
 # Project: spm (Smart Package Manager)
 
-Go CLI that auto-detects npm/yarn/pnpm/bun and proxies commands.
+Go CLI that auto-detects npm/yarn/pnpm/bun/deno and proxies commands.
 
 **Language rule**: This is an open-source project. All code, comments, commit messages, PR descriptions, documentation, and agent output **must** be written in English.
 

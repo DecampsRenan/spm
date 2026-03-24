@@ -92,6 +92,88 @@ func TestDetectBunBothLockFiles(t *testing.T) {
 	}
 }
 
+func TestDetectDeno(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "package.json")
+	touch(t, dir, "deno.lock")
+
+	dets, err := Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Deno {
+		t.Fatalf("expected deno, got %v", dets)
+	}
+}
+
+func TestDetectDenoJson(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "deno.json")
+	touch(t, dir, "deno.lock")
+
+	dets, err := Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Deno {
+		t.Fatalf("expected deno, got %v", dets)
+	}
+}
+
+func TestDetectDenoJsonc(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "deno.jsonc")
+	touch(t, dir, "deno.lock")
+
+	dets, err := Detect(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Deno {
+		t.Fatalf("expected deno, got %v", dets)
+	}
+}
+
+func TestDetectDenoJsonNoLockFile(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, dir, "deno.json")
+
+	_, err := Detect(dir)
+	if err == nil {
+		t.Fatal("expected error when no lock file found")
+	}
+
+	var noLock *ErrNoLockFile
+	if !errors.As(err, &noLock) {
+		t.Fatalf("expected ErrNoLockFile, got %T: %v", err, err)
+	}
+	if noLock.Dir != dir {
+		t.Fatalf("expected dir %s, got %s", dir, noLock.Dir)
+	}
+}
+
+func TestDetectDenoWalksUp(t *testing.T) {
+	root := t.TempDir()
+	touch(t, root, "deno.json")
+	touch(t, root, "deno.lock")
+
+	sub := filepath.Join(root, "src", "components")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	dets, err := Detect(sub)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dets) != 1 || dets[0].PM != Deno {
+		t.Fatalf("expected deno from parent, got %v", dets)
+	}
+	if dets[0].Dir != root {
+		t.Fatalf("expected dir %s, got %s", root, dets[0].Dir)
+	}
+}
+
 func TestDetectWalksUp(t *testing.T) {
 	root := t.TempDir()
 	touch(t, root, "package.json")
@@ -188,6 +270,7 @@ func TestLockFileName(t *testing.T) {
 		{Yarn, "yarn.lock"},
 		{Pnpm, "pnpm-lock.yaml"},
 		{Bun, "bun.lock"},
+		{Deno, "deno.lock"},
 		{PackageManager("unknown"), ""},
 	}
 	for _, tt := range tests {
