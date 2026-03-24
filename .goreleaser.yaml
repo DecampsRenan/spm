@@ -14,7 +14,7 @@ builds:
       - -s -w -X main.version={{.Version}}
 
 archives:
-  - format: tar.gz
+  - formats: ["tar.gz"]
     name_template: "spm_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
@@ -26,7 +26,7 @@ release:
     name: spm
   prerelease: auto
 
-brews:
+homebrew_casks:
   - repository:
       owner: decampsrenan
       name: homebrew-tap

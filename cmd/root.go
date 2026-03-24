@@ -178,6 +178,7 @@ func init() {
 	rootCmd.AddCommand(playSoundCmd)
 	rootCmd.AddCommand(playMusicCmd)
 	rootCmd.AddCommand(auditCmd)
+	rootCmd.AddCommand(initCmd)
 }
 
 func SetVersion(v string) {
@@ -198,7 +199,7 @@ func Execute() {
 	knownCmds := map[string]bool{
 		"install": true, "i": true, "add": true, "run": true, "remove": true, "clean": true,
 		"help": true, "completion": true, "version": true,
-		"_play-sound": true, "_play-music": true, "audit": true,
+		"_play-sound": true, "_play-music": true, "audit": true, "init": true,
 	}
 
 	if scriptName := firstNonFlagArg(os.Args[1:]); scriptName != "" && !knownCmds[scriptName] {
