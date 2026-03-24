@@ -25,3 +25,13 @@ release:
     owner: decampsrenan
     name: spm
   prerelease: auto
+
+brews:
+  - repository:
+      owner: decampsrenan
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/decampsrenan/spm
+    description: "Smart Package Manager — auto-detects and proxies to the right Node.js package manager"
+    license: MIT
+    skip_upload: auto

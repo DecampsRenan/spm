@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Homebrew tap distribution — install via `brew install decampsrenan/tap/spm`.
 - `spm audit` command — runs a security audit and normalizes output across npm, yarn (classic & Berry), and pnpm.
 - `--prod-only` flag on `spm audit` to skip dev dependencies.
 - `--json` flag on `spm audit` for machine-readable output.
