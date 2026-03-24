@@ -90,6 +90,44 @@ func TestResolveFallbackScript(t *testing.T) {
 	}
 }
 
+func TestResolveInit(t *testing.T) {
+	tests := []struct {
+		pm   detector.PackageManager
+		args []string
+		want []string
+	}{
+		{detector.NPM, nil, []string{"npm", "init", "-y"}},
+		{detector.Yarn, nil, []string{"yarn", "init", "-y"}},
+		{detector.Pnpm, nil, []string{"pnpm", "init"}},
+		{detector.Bun, nil, []string{"bun", "init", "-y"}},
+	}
+	for _, tt := range tests {
+		got := Resolve(tt.pm, "init", tt.args)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("Resolve(%s, init, %v) = %v, want %v", tt.pm, tt.args, got, tt.want)
+		}
+	}
+}
+
+func TestResolveInitWithExtraFlags(t *testing.T) {
+	tests := []struct {
+		pm   detector.PackageManager
+		args []string
+		want []string
+	}{
+		{detector.NPM, []string{"--scope=@myorg"}, []string{"npm", "init", "-y", "--scope=@myorg"}},
+		{detector.Bun, []string{"--react"}, []string{"bun", "init", "-y", "--react"}},
+		{detector.Pnpm, []string{"--react"}, []string{"pnpm", "init", "--react"}},
+		{detector.Yarn, []string{"--scope=@myorg"}, []string{"yarn", "init", "-y", "--scope=@myorg"}},
+	}
+	for _, tt := range tests {
+		got := Resolve(tt.pm, "init", tt.args)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("Resolve(%s, init, %v) = %v, want %v", tt.pm, tt.args, got, tt.want)
+		}
+	}
+}
+
 func TestResolveWithExtraFlags(t *testing.T) {
 	got := Resolve(detector.NPM, "add", []string{"react", "--save-dev"})
 	want := []string{"npm", "install", "react", "--save-dev"}

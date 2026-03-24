@@ -103,6 +103,33 @@ func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 	return scriptNames[choice], nil
 }
 
+// SelectPM asks the user to pick a package manager (used by spm init).
+func SelectPM() (detector.PackageManager, error) {
+	if !isatty.IsTerminal(os.Stdin.Fd()) && !isatty.IsCygwinTerminal(os.Stdin.Fd()) {
+		return "", fmt.Errorf("no package manager specified and stdin is not a TTY — pass it as argument: spm init <pm>")
+	}
+
+	options := []huh.Option[string]{
+		huh.NewOption(string(detector.NPM), string(detector.NPM)),
+		huh.NewOption(string(detector.Yarn), string(detector.Yarn)),
+		huh.NewOption(string(detector.Pnpm), string(detector.Pnpm)),
+		huh.NewOption(string(detector.Bun), string(detector.Bun)),
+	}
+
+	var choice string
+	err := runField(
+		huh.NewSelect[string]().
+			Title("Which package manager?").
+			Options(options...).
+			Value(&choice),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return detector.PackageManager(choice), nil
+}
+
 // SelectFromAll asks the user to pick a package manager when no lock file is found.
 func SelectFromAll(projectDir string) (detector.Detection, error) {
 	if !isatty.IsTerminal(os.Stdin.Fd()) && !isatty.IsCygwinTerminal(os.Stdin.Fd()) {

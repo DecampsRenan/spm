@@ -105,6 +105,41 @@ func TestRunNotifyBinaryNotFound(t *testing.T) {
 	}
 }
 
+func TestRunSubprocessDryRun(t *testing.T) {
+	err := RunSubprocess([]string{"echo", "hello"}, true)
+	if err != nil {
+		t.Fatalf("dry run returned error: %v", err)
+	}
+}
+
+func TestRunSubprocessEmptyArgs(t *testing.T) {
+	err := RunSubprocess([]string{}, false)
+	if err == nil {
+		t.Fatal("expected error for empty args")
+	}
+}
+
+func TestRunSubprocessBinaryNotFound(t *testing.T) {
+	err := RunSubprocess([]string{"nonexistent-binary-xyz-12345"}, false)
+	if err == nil {
+		t.Fatal("expected error for missing binary")
+	}
+}
+
+func TestRunSubprocessExecutes(t *testing.T) {
+	err := RunSubprocess([]string{"echo", "hello"}, false)
+	if err != nil {
+		t.Fatalf("subprocess returned error: %v", err)
+	}
+}
+
+func TestRunSubprocessExitCode(t *testing.T) {
+	err := RunSubprocess([]string{"false"}, false)
+	if err == nil {
+		t.Fatal("expected error for non-zero exit code")
+	}
+}
+
 // TestRunVibesSIGINTExits verifies that sending SIGINT to the runner process
 // causes it to exit with code 130 (the standard SIGINT exit code).
 // This uses the subprocess test pattern because Run calls os.Exit.
