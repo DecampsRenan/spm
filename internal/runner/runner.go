@@ -14,6 +14,30 @@ import (
 
 const fadeDuration = 3 * time.Second
 
+// RunSubprocess executes the given command as a subprocess (not process replacement).
+// If dryRun is true, it prints what would be run and returns nil.
+func RunSubprocess(args []string, dryRun bool) error {
+	if len(args) == 0 {
+		return fmt.Errorf("no command to run")
+	}
+
+	if dryRun {
+		ui.Println(ui.Command(args))
+		return nil
+	}
+
+	bin, err := exec.LookPath(args[0])
+	if err != nil {
+		return fmt.Errorf("%s not found in PATH: %w", args[0], err)
+	}
+
+	cmd := exec.Command(bin, args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 // Run executes the given command. If dryRun is true, it prints what would be
 // run and returns nil. If vibes is true, it plays background music during
 // execution. If notify is true, it plays a notification sound on completion.

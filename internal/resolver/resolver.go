@@ -9,6 +9,19 @@ func Resolve(pm detector.PackageManager, command string, args []string) []string
 	bin := string(pm)
 
 	switch command {
+	case "init":
+		switch pm {
+		case detector.Pnpm, detector.Bun:
+			// pnpm and bun init are already non-interactive
+			return append([]string{bin, "init"}, args...)
+		case detector.Yarn:
+			// yarn classic needs -y; yarn Berry ignores it harmlessly
+			return append([]string{bin, "init", "-y"}, args...)
+		default:
+			// npm needs -y for non-interactive init
+			return append([]string{bin, "init", "-y"}, args...)
+		}
+
 	case "install", "i":
 		return append([]string{bin, "install"}, args...)
 

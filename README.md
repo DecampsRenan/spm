@@ -56,6 +56,7 @@ Ever joined a project and had to check which package manager it uses before runn
 - 👀 **Dry-run mode** to preview commands without executing them
 - 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
 - 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)
+- 🆕 **Project init** — `spm init` scaffolds a new project with the package manager of your choice
 - 🔒 **Security audit** — `spm audit` runs a dependency audit and normalizes output across npm/yarn/pnpm
 
 ### Built With
@@ -147,6 +148,16 @@ spm clean --lock
 # Skip the confirmation prompt (useful in CI)
 spm clean --yes
 
+# Initialize a new project (interactive PM selection)
+spm init
+
+# Initialize with a specific package manager
+spm init npm
+spm init yarn
+
+# Preview the init command without running it
+spm init npm --dry-run
+
 # Preview what would run without executing
 spm dev --dry-run
 
@@ -183,6 +194,7 @@ spm -v
 
 | spm command   | npm               | yarn            | pnpm            | bun             |
 | ------------- | ----------------- | --------------- | --------------- | --------------- |
+| `spm init`    | `npm init -y`     | `yarn init -y`  | `pnpm init`     | `bun init`      |
 | `spm install` | `npm install`     | `yarn install`  | `pnpm install`  | `bun install`   |
 | `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  | `bun add foo`   |
 | `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* |
