@@ -39,20 +39,23 @@ func TestInstallCmdWhitelistsUnknownFlags(t *testing.T) {
 	}
 }
 
-func TestAddCmdRequiresArgs(t *testing.T) {
-	err := addCmd.Args(addCmd, []string{})
-	if err == nil {
-		t.Fatal("expected error for empty args")
-	}
-	if !strings.Contains(err.Error(), "specify at least one package to add") {
-		t.Errorf("expected custom error message, got: %v", err)
+func TestAddCmdAcceptsNoArgs(t *testing.T) {
+	// addCmd no longer requires args — zero args triggers interactive search TUI
+	if addCmd.Args != nil {
+		err := addCmd.Args(addCmd, []string{})
+		if err != nil {
+			t.Fatalf("addCmd should accept zero args (interactive mode): %v", err)
+		}
 	}
 }
 
 func TestAddCmdAcceptsArgs(t *testing.T) {
-	err := addCmd.Args(addCmd, []string{"react"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	// addCmd with args should still work (direct add)
+	if addCmd.Args != nil {
+		err := addCmd.Args(addCmd, []string{"react"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 	}
 }
 
