@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(just fmt:*)",
+      "Bash(just test:*)"
+    ]
+  }
+}
