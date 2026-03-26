@@ -58,6 +58,7 @@ Ever joined a project and had to check which package manager it uses before runn
 - 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)
 - 🆕 **Project init** — `spm init` scaffolds a new project with the package manager of your choice
 - 🔒 **Security audit** — `spm audit` runs a dependency audit and normalizes output across npm/yarn/pnpm
+- ⬆️ **Self-upgrade** — `spm upgrade` updates spm to the latest release from GitHub
 
 ### Built With
 
@@ -185,6 +186,18 @@ spm audit --severity high
 # Preview the audit command without running it
 spm audit --dry-run
 
+# Upgrade spm to the latest version
+spm upgrade
+
+# Upgrade to the latest alpha/pre-release
+spm upgrade --alpha
+
+# Reinstall even if already up to date
+spm upgrade --force
+
+# Preview upgrade without downloading
+spm upgrade --dry-run
+
 # Show version
 spm --version
 spm -v
@@ -201,6 +214,7 @@ spm -v
 | `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` |
 | `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |
 | `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |                 |
+| `spm upgrade` | Self-updates spm via GitHub Releases |                 |                 |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       |
 
 ## Contributing
