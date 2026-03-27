@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Interactive package search TUI — `spm add` with no arguments launches a type-ahead search against the npm registry.
+- Install progress TUI — `spm install` now shows a spinner with elapsed time and scrolling log lines (last 3 lines of PM output) by default on TTY environments.
+- `--raw` flag on `spm install` to bypass the progress TUI and display raw package manager output (auto-enabled in non-TTY/CI environments).
+
 ## [0.5.0] - 2026-03-26
 
 ### Added

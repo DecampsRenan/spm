@@ -59,6 +59,8 @@ Ever joined a project and had to check which package manager it uses before runn
 - 🆕 **Project init** — `spm init` scaffolds a new project with the package manager of your choice
 - 🔒 **Security audit** — `spm audit` runs a dependency audit and normalizes output across npm/yarn/pnpm
 - ⬆️ **Self-upgrade** — `spm upgrade` updates spm to the latest release from GitHub
+- 🔎 **Interactive search** — `spm add` with no args lets you search and pick a package from the npm registry
+- ✨ **Progress TUI** — `spm install` shows a live spinner with elapsed time and scrolling logs (use `--raw` for raw output)
 
 ### Built With
 
@@ -126,6 +128,9 @@ spm install --frozen-lockfile
 # Add a package
 spm add react
 
+# Search and pick a package interactively
+spm add
+
 # Add a dev dependency
 spm add vitest --save-dev
 
@@ -171,6 +176,9 @@ spm install --notify
 # Combine vibes and notification
 spm install --vibes --notify
 
+# Show raw package manager output (skip progress TUI)
+spm install --raw
+
 # Run a security audit on dependencies
 spm audit
 
@@ -210,6 +218,7 @@ spm -v
 | `spm init`    | `npm init -y`     | `yarn init -y`  | `pnpm init`     | `bun init`      |
 | `spm install` | `npm install`     | `yarn install`  | `pnpm install`  | `bun install`   |
 | `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  | `bun add foo`   |
+| `spm add`     | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* |
 | `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* |
 | `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` |
 | `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |
