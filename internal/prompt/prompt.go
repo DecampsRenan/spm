@@ -92,12 +92,21 @@ func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 	}
 
 	var choice int
-	err := runField(
-		huh.NewSelect[int]().
-			Title("Select a script to run:").
-			Options(options...).
-			Value(&choice),
-	)
+	field := huh.NewSelect[int]().
+		Title("Select a script to run:").
+		Options(options...).
+		Filtering(true).
+		Value(&choice)
+
+	km := huh.NewDefaultKeyMap()
+	km.Select.Prev.SetEnabled(false)
+	km.Select.Filter.SetEnabled(false)
+
+	err := huh.NewForm(huh.NewGroup(field)).
+		WithTheme(theme()).
+		WithKeyMap(km).
+		Run()
+	ui.DrainTerminalResponses()
 	if err != nil {
 		return "", err
 	}
