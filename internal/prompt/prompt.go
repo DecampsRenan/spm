@@ -16,9 +16,11 @@ func theme() huh.Theme {
 }
 
 func runField(field huh.Field) error {
-	return huh.NewForm(huh.NewGroup(field)).
+	err := huh.NewForm(huh.NewGroup(field)).
 		WithTheme(theme()).
 		Run()
+	ui.DrainTerminalResponses()
+	return err
 }
 
 // Confirm asks the user a yes/no question. Returns true if they confirmed.

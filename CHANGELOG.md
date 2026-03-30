@@ -12,6 +12,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Include CHANGELOG release notes in GitHub releases instead of auto-generated content.
+
+## [0.6.1] - 2026-03-30
+
+### Added
+
+- Gradient fade on install log lines — older lines appear more faded, most recent line at normal dim brightness. Increased visible log lines from 3 to 5.
+
+### Fixed
+
+- Fixed terminal escape sequence leaks (e.g., `^[[?2026;2$y`) after TUI exit when subprocesses finish quickly.
+
+## [0.6.0] - 2026-03-27
+
+### Added
+
+- Interactive package search TUI — `spm add` with no arguments launches a type-ahead search against the npm registry.
+- Install progress TUI — `spm install` now shows a spinner with elapsed time and scrolling log lines (last 3 lines of PM output) by default on TTY environments.
+- `--raw` flag on `spm install` to bypass the progress TUI and display raw package manager output (auto-enabled in non-TTY/CI environments).
+
+## [0.5.0] - 2026-03-26
+
 ### Added
 
 - Deno package manager support — detects `deno.lock` and recognizes `deno.json`/`deno.jsonc` as project markers.
@@ -22,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--prod-only` flag on `spm audit` to skip dev dependencies.
 - `--json` flag on `spm audit` for machine-readable output.
 - `--severity` flag on `spm audit` to filter by minimum severity level (info, low, moderate, high, critical).
+- `spm upgrade` command — self-update spm to the latest GitHub release, with `--alpha` for pre-releases, `--force` to reinstall, and `--dry-run` support.
 
 ## [0.4.0] - 2026-03-20
 
@@ -127,7 +152,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform build configuration via GoReleaser (linux/darwin × amd64/arm64).
 - Curl-based installation script (`scripts/install.sh`).
 
-[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/DecampsRenan/spm/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/DecampsRenan/spm/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/DecampsRenan/spm/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/DecampsRenan/spm/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/DecampsRenan/spm/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/DecampsRenan/spm/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/DecampsRenan/spm/compare/v0.2.0...v0.2.1

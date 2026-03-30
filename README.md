@@ -58,6 +58,9 @@ Ever joined a project and had to check which package manager it uses before runn
 - 🔔 **Notification sounds** — get notified when the command finishes (`--notify`)
 - 🆕 **Project init** — `spm init` scaffolds a new project with the package manager of your choice
 - 🔒 **Security audit** — `spm audit` runs a dependency audit and normalizes output across npm/yarn/pnpm
+- ⬆️ **Self-upgrade** — `spm upgrade` updates spm to the latest release from GitHub
+- 🔎 **Interactive search** — `spm add` with no args lets you search and pick a package from the npm registry
+- ✨ **Progress TUI** — `spm install` shows a live spinner with elapsed time and scrolling logs (use `--raw` for raw output)
 
 ### Built With
 
@@ -125,6 +128,9 @@ spm install --frozen-lockfile
 # Add a package
 spm add react
 
+# Search and pick a package interactively
+spm add
+
 # Add a dev dependency
 spm add vitest --save-dev
 
@@ -170,6 +176,9 @@ spm install --notify
 # Combine vibes and notification
 spm install --vibes --notify
 
+# Show raw package manager output (skip progress TUI)
+spm install --raw
+
 # Run a security audit on dependencies
 spm audit
 
@@ -185,6 +194,18 @@ spm audit --severity high
 # Preview the audit command without running it
 spm audit --dry-run
 
+# Upgrade spm to the latest version
+spm upgrade
+
+# Upgrade to the latest alpha/pre-release
+spm upgrade --alpha
+
+# Reinstall even if already up to date
+spm upgrade --force
+
+# Preview upgrade without downloading
+spm upgrade --dry-run
+
 # Show version
 spm --version
 spm -v
@@ -197,10 +218,12 @@ spm -v
 | `spm init`    | `npm init -y`     | `yarn init -y`  | `pnpm init`     | `bun init`      | `deno init`       |
 | `spm install` | `npm install`     | `yarn install`  | `pnpm install`  | `bun install`   | `deno install`    |
 | `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  | `bun add foo`   | `deno add foo`    |
+| `spm add`     | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* |
 | `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* | *(interactive)*   |
 | `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` | `deno remove foo` |
 | `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |                   |
 | `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |           |                   |
+| `spm upgrade` | Self-updates spm via GitHub Releases |                 |                 |                   |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       | `deno task dev`   |
 
 ## Contributing
