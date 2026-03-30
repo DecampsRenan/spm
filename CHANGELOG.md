@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Include CHANGELOG release notes in GitHub releases instead of auto-generated content.
+
 ## [0.6.1] - 2026-03-30
 
 ### Added
