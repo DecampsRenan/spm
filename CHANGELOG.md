@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Type-to-filter support on interactive script selection (`spm run`).
+
 ### Fixed
 
 - Include CHANGELOG release notes in GitHub releases instead of auto-generated content.
