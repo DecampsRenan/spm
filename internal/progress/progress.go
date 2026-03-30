@@ -100,6 +100,7 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 		}
 		_ = cmd.Process.Kill()
 		p.Quit()
+		ui.DrainTerminalResponses()
 		if s == syscall.SIGTERM {
 			os.Exit(143)
 		}
@@ -107,6 +108,7 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	}()
 
 	finalModel, err := p.Run()
+	ui.DrainTerminalResponses()
 	if err != nil {
 		return fmt.Errorf("progress TUI error: %w", err)
 	}
