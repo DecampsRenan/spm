@@ -63,3 +63,51 @@ func TestPathContainsPath(t *testing.T) {
 		t.Errorf("Path() should contain the path, got: %s", result)
 	}
 }
+
+func TestDimGradientContainsMessage(t *testing.T) {
+	result := DimGradient("log line", 0, 5)
+	if !strings.Contains(result, "log line") {
+		t.Errorf("DimGradient() should contain the message, got: %s", result)
+	}
+}
+
+func TestDimGradientSingleLine(t *testing.T) {
+	// With total <= 1, should fall back to normal Dim style.
+	result := DimGradient("only line", 0, 1)
+	if !strings.Contains(result, "only line") {
+		t.Errorf("DimGradient() with total=1 should contain the message, got: %s", result)
+	}
+}
+
+func TestDimGradientAllLevels(t *testing.T) {
+	total := 5
+	for i := 0; i < total; i++ {
+		result := DimGradient("line", i, total)
+		if !strings.Contains(result, "line") {
+			t.Errorf("DimGradient(level=%d) should contain the message, got: %s", i, result)
+		}
+	}
+}
+
+func TestLerp(t *testing.T) {
+	tests := []struct {
+		a, b uint8
+		t    float64
+		want uint8
+	}{
+		{0, 100, 0.0, 0},
+		{0, 100, 1.0, 100},
+		{0, 100, 0.5, 50},
+		{100, 0, 0.5, 50},       // reverse direction
+		{0x37, 0x6B, 0.0, 0x37}, // dark mode red at start
+		{0x37, 0x6B, 1.0, 0x6B}, // dark mode red at end
+		{0x9C, 0x4B, 0.0, 0x9C}, // light mode red at start
+		{0x9C, 0x4B, 1.0, 0x4B}, // light mode red at end
+	}
+	for _, tt := range tests {
+		got := lerp(tt.a, tt.b, tt.t)
+		if got != tt.want {
+			t.Errorf("lerp(%d, %d, %.1f) = %d, want %d", tt.a, tt.b, tt.t, got, tt.want)
+		}
+	}
+}
