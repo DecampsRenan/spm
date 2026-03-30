@@ -6,6 +6,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/mattn/go-isatty"
+
+	"github.com/decampsrenan/spm/internal/ui"
 )
 
 // RunInteractive launches the interactive package search TUI.
@@ -20,6 +22,7 @@ func RunInteractive() (*Selection, error) {
 	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
+	ui.DrainTerminalResponses()
 	if err != nil {
 		return nil, fmt.Errorf("search TUI error: %w", err)
 	}
