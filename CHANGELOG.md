@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed terminal escape sequence leaks (e.g., `^[[?2026;2$y`) after TUI exit when subprocesses finish quickly.
+
 ## [0.6.0] - 2026-03-27
 
 ### Added
