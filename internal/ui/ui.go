@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image/color"
 	"os"
 	"strings"
@@ -63,6 +64,35 @@ func Info(msg string) string {
 // Dim returns a dimmed message for secondary text.
 func Dim(msg string) string {
 	return StyleDim.Render(msg)
+}
+
+// DimGradient returns a dimmed message with gradient intensity.
+// level 0 = most faded (top), level total-1 = normal dim (bottom).
+func DimGradient(msg string, level, total int) string {
+	if total <= 1 {
+		return StyleDim.Render(msg)
+	}
+	t := float64(level) / float64(total-1) // 0.0 (faded) → 1.0 (normal)
+
+	var r, g, b uint8
+	if hasDarkBG {
+		// Dark mode: #374151 (faded) → #6B7280 (normal dim)
+		r = lerp(0x37, 0x6B, t)
+		g = lerp(0x41, 0x72, t)
+		b = lerp(0x51, 0x80, t)
+	} else {
+		// Light mode: #9CA3AF (faded) → #4B5563 (normal dim)
+		r = lerp(0x9C, 0x4B, t)
+		g = lerp(0xA3, 0x55, t)
+		b = lerp(0xAF, 0x63, t)
+	}
+
+	c := lipgloss.Color(fmt.Sprintf("#%02X%02X%02X", r, g, b))
+	return lipgloss.NewStyle().Foreground(c).Render(msg)
+}
+
+func lerp(a, b uint8, t float64) uint8 {
+	return uint8(float64(a) + (float64(b)-float64(a))*t)
 }
 
 // Command returns a styled command preview for dry-run output.

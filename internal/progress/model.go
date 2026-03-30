@@ -12,7 +12,7 @@ import (
 	"github.com/decampsrenan/spm/internal/ui"
 )
 
-const maxLogLines = 3
+const maxLogLines = 5
 
 // model is the bubbletea model for the install progress TUI.
 type model struct {
@@ -118,17 +118,18 @@ func (m model) View() tea.View {
 		b.WriteString(status + "\n")
 	}
 
-	// Log lines
+	// Log lines — gradient: top lines are faded, bottom line is normal dim
 	if len(m.lines) > 0 {
 		b.WriteString("\n")
-		for _, line := range m.lines {
+		total := len(m.lines)
+		for i, line := range m.lines {
 			// Truncate to terminal width
 			display := line
 			maxLen := m.width - 4
 			if maxLen > 0 && len(display) > maxLen {
 				display = display[:maxLen-1] + "…"
 			}
-			b.WriteString("    " + ui.Dim(display) + "\n")
+			b.WriteString("    " + ui.DimGradient(display, i, total) + "\n")
 		}
 	}
 

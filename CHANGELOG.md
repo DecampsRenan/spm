@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Gradient fade on install log lines — older lines appear more faded, most recent line at normal dim brightness. Increased visible log lines from 3 to 5.
+
 ### Fixed
 
 - Fixed terminal escape sequence leaks (e.g., `^[[?2026;2$y`) after TUI exit when subprocesses finish quickly.
