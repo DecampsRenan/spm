@@ -29,6 +29,16 @@ jobs:
           TAG="${BRANCH#release/}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${TAG#v}"
+          # Extract content between this version's heading and the next version heading
+          NOTES=$(sed -n "/^## \[${VERSION}\]/,/^## \[/{/^## \[${VERSION}\]/d;/^## \[/d;p;}" CHANGELOG.md)
+          # Write to file for goreleaser
+          echo "$NOTES" > /tmp/release-notes.md
+
       - name: Create and push tag
         run: |
           git config user.name "github-actions[bot]"
@@ -39,7 +49,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean
+          args: release --clean --release-notes /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
