@@ -30,7 +30,7 @@ var rawOutput bool
 
 var rootCmd = &cobra.Command{
 	Use:   "spm",
-	Short: "Smart Package Manager — auto-detects npm/yarn/pnpm/bun and proxies commands",
+	Short: "Smart Package Manager — auto-detects npm/yarn/pnpm/bun/deno and proxies commands",
 	// Running `spm` with no args is equivalent to `spm install`
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run("install", args)
@@ -70,7 +70,7 @@ var addCmd = &cobra.Command{
 
 var runCmd = &cobra.Command{
 	Use:   "run [script]",
-	Short: "Run a script from package.json",
+	Short: "Run a script from package.json or a task from deno.json",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			return run(args[0], args[1:])
@@ -87,11 +87,19 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		scriptList, err := scripts.List(det.Dir)
+		var scriptList []scripts.Script
+		if det.PM == detector.Deno {
+			scriptList, err = scripts.ListDeno(det.Dir)
+		} else {
+			scriptList, err = scripts.List(det.Dir)
+		}
 		if err != nil {
 			return err
 		}
 		if len(scriptList) == 0 {
+			if det.PM == detector.Deno {
+				return fmt.Errorf("no tasks found in deno.json")
+			}
 			return fmt.Errorf("no scripts found in package.json")
 		}
 

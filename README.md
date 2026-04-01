@@ -6,7 +6,7 @@
 </h1>
 
 <div align="center">
-  <strong>Smart Package Manager</strong> — One CLI to rule them all. Stop worrying about npm vs yarn vs pnpm vs bun, just run <code>spm</code> and let it figure out the rest.
+  <strong>Smart Package Manager</strong> — One CLI to rule them all. Stop worrying about npm vs yarn vs pnpm vs bun vs deno, just run <code>spm</code> and let it figure out the rest.
   <br />
   <br />
   <a href="https://github.com/DecampsRenan/spm/issues/new?labels=bug&title=bug%3A+">🐛 Report a Bug</a>
@@ -47,11 +47,11 @@ Ever joined a project and had to check which package manager it uses before runn
 
 **spm** detects your project's package manager automatically and translates your commands on the fly. Just type `spm install`, `spm add react`, or `spm dev` — it handles the rest.
 
-- 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`)
+- 🔍 **Auto-detection** via lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`, `deno.lock`) and project markers (`package.json`, `deno.json`, `deno.jsonc`)
 - 📂 **Directory walk-up** — works from any subdirectory in your project
 - 🔀 **Flag pass-through** — unknown flags (e.g. `--legacy-peer-deps`) are forwarded to the underlying package manager
 - 🔄 **Command translation** — maps commands to the correct syntax for each package manager
-- 🎯 **Interactive script runner** — `spm run` lets you pick a script from package.json
+- 🎯 **Interactive script runner** — `spm run` lets you pick a script from package.json (or a task from deno.json)
 - 💬 **Interactive prompt** when multiple lock files are detected or no lock file exists
 - 👀 **Dry-run mode** to preview commands without executing them
 - 🎵 **Vibes mode** — play background music while installing dependencies (`--vibes`)
@@ -119,7 +119,7 @@ go install github.com/decampsrenan/spm@latest
 ## Usage
 
 ```sh
-# Install dependencies (auto-detects npm/yarn/pnpm/bun)
+# Install dependencies (auto-detects npm/yarn/pnpm/bun/deno)
 spm install
 
 # Pass flags through to the underlying package manager
@@ -214,18 +214,18 @@ spm -v
 
 ### Command mapping
 
-| spm command   | npm               | yarn            | pnpm            | bun             |
-| ------------- | ----------------- | --------------- | --------------- | --------------- |
-| `spm init`    | `npm init -y`     | `yarn init -y`  | `pnpm init`     | `bun init`      |
-| `spm install` | `npm install`     | `yarn install`  | `pnpm install`  | `bun install`   |
-| `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  | `bun add foo`   |
-| `spm add`     | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* |
-| `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* |
-| `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` |
-| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |
-| `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |                 |
-| `spm upgrade` | Self-updates spm via GitHub Releases |                 |                 |
-| `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       |
+| spm command   | npm               | yarn            | pnpm            | bun             | deno              |
+| ------------- | ----------------- | --------------- | --------------- | --------------- | ----------------- |
+| `spm init`    | `npm init -y`     | `yarn init -y`  | `pnpm init`     | `bun init`      | `deno init`       |
+| `spm install` | `npm install`     | `yarn install`  | `pnpm install`  | `bun install`   | `deno install`    |
+| `spm add foo` | `npm install foo` | `yarn add foo`  | `pnpm add foo`  | `bun add foo`   | `deno add foo`    |
+| `spm add`     | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* |
+| `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* | *(interactive)*   |
+| `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` | `deno remove foo` |
+| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |                   |
+| `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |           |                   |
+| `spm upgrade` | Self-updates spm via GitHub Releases |                 |                 |                   |
+| `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       | `deno task dev`   |
 
 ## Contributing
 

@@ -13,6 +13,7 @@ const (
 	Yarn PackageManager = "yarn"
 	Pnpm PackageManager = "pnpm"
 	Bun  PackageManager = "bun"
+	Deno PackageManager = "deno"
 )
 
 var lockFiles = map[string]PackageManager{
@@ -21,7 +22,10 @@ var lockFiles = map[string]PackageManager{
 	"pnpm-lock.yaml":    Pnpm,
 	"bun.lock":          Bun,
 	"bun.lockb":         Bun,
+	"deno.lock":         Deno,
 }
+
+var projectMarkers = []string{"package.json", "deno.json", "deno.jsonc"}
 
 type Detection struct {
 	PM  PackageManager
@@ -37,8 +41,9 @@ func (e *ErrNoLockFile) Error() string {
 	return fmt.Sprintf("no lock file found in %s", e.Dir)
 }
 
-// Detect walks up from startDir looking for a directory containing package.json
-// and at least one known lock file. It stops at $HOME.
+// Detect walks up from startDir looking for a directory containing a project
+// marker (package.json, deno.json, or deno.jsonc) and at least one known lock
+// file. It stops at $HOME.
 // Returns all detected package managers in the first matching directory.
 func Detect(startDir string) ([]Detection, error) {
 	home, err := os.UserHomeDir()
@@ -47,11 +52,11 @@ func Detect(startDir string) ([]Detection, error) {
 	}
 
 	dir := startDir
-	var firstPackageJSONDir string
+	var firstProjectDir string
 	for {
-		if hasFile(dir, "package.json") {
-			if firstPackageJSONDir == "" {
-				firstPackageJSONDir = dir
+		if hasProjectMarker(dir) {
+			if firstProjectDir == "" {
+				firstProjectDir = dir
 			}
 			var detections []Detection
 			seen := make(map[PackageManager]bool)
@@ -77,10 +82,19 @@ func Detect(startDir string) ([]Detection, error) {
 		dir = parent
 	}
 
-	if firstPackageJSONDir != "" {
-		return nil, &ErrNoLockFile{Dir: firstPackageJSONDir}
+	if firstProjectDir != "" {
+		return nil, &ErrNoLockFile{Dir: firstProjectDir}
 	}
-	return nil, fmt.Errorf("no package.json with a lock file found (searched up to %s)", home)
+	return nil, fmt.Errorf("no project (package.json / deno.json) with a lock file found (searched up to %s)", home)
+}
+
+func hasProjectMarker(dir string) bool {
+	for _, marker := range projectMarkers {
+		if hasFile(dir, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 // LockFileName returns the lock file name for the given package manager.
@@ -90,6 +104,9 @@ func LockFileName(pm PackageManager) string {
 	// modern format explicitly to avoid returning the legacy binary one.
 	if pm == Bun {
 		return "bun.lock"
+	}
+	if pm == Deno {
+		return "deno.lock"
 	}
 	for name, p := range lockFiles {
 		if p == pm {

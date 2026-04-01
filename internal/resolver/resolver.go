@@ -42,10 +42,12 @@ func Resolve(pm detector.PackageManager, command string, args []string) []string
 		}
 
 	default:
-		// Fallback: treat as a script run
+		// Fallback: treat as a script/task run
 		switch pm {
 		case detector.NPM:
 			return append([]string{bin, "run", command}, args...)
+		case detector.Deno:
+			return append([]string{bin, "task", command}, args...)
 		default:
 			// yarn, pnpm, and bun don't need explicit "run"
 			return append([]string{bin, command}, args...)
