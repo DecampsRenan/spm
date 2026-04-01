@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Package details view with version selection in interactive `spm add` — press Enter on a search result to see metadata (description, author, license, weekly downloads, GitHub stars) and pick a specific version to install.
+
 ## [0.6.2] - 2026-03-30
 
 ### Added

@@ -339,8 +339,8 @@ func run(command string, extraArgs []string) error {
 
 	args := resolver.Resolve(det.PM, command, extraArgs)
 
-	// Use progress TUI for install commands when stdout is a TTY and --raw is not set.
-	if command == "install" || command == "i" {
+	// Use progress TUI for install/add commands when stdout is a TTY and --raw is not set.
+	if command == "install" || command == "i" || command == "add" {
 		isTTY := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
 		if isTTY && !rawOutput {
 			return progress.Run(args, dryRun, vibes, notify)
