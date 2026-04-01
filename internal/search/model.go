@@ -273,6 +273,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() tea.View {
+	if m.selected {
+		return tea.NewView("")
+	}
+
 	var b strings.Builder
 
 	if m.view == viewDetails {
