@@ -324,7 +324,7 @@ func (m model) viewSearchPane() string {
 	} else if m.err != nil {
 		b.WriteString("  " + ui.Warning(fmt.Sprintf("Search failed: %v", m.err)) + "\n")
 	} else if len(m.results) == 0 && m.lastQuery != "" {
-		b.WriteString(ui.Dim("  Aucun résultat.") + "\n")
+		b.WriteString(ui.Dim("  No results.") + "\n")
 	} else if len(m.results) > 0 {
 		// Compute column widths from actual data
 		pkgColWidth := len("Package")
@@ -483,7 +483,7 @@ func (m model) viewDetailsPane() string {
 
 	// ── Version table ────────────────────────────────────────────────────
 	if len(m.filteredVersions) == 0 {
-		b.WriteString(ui.Dim("  Aucun résultat.\n"))
+		b.WriteString(ui.Dim("  No results.\n"))
 	} else {
 		// Compute version column width from visible data (cap at 30)
 		verColWidth := len("Version")
