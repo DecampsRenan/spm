@@ -32,8 +32,12 @@ func RunInteractive() (*Selection, error) {
 		return nil, fmt.Errorf("no package selected")
 	}
 
+	pkg := fm.results[fm.cursor].Name
+	if fm.selectedVersion != "" {
+		pkg += "@" + fm.selectedVersion
+	}
 	return &Selection{
-		Package: fm.results[fm.cursor].Name,
+		Package: pkg,
 		SaveDev: fm.saveDev,
 	}, nil
 }
