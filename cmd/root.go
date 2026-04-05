@@ -339,11 +339,29 @@ func run(command string, extraArgs []string) error {
 
 	args := resolver.Resolve(det.PM, command, extraArgs)
 
-	// Use progress TUI for install/add commands when stdout is a TTY and --raw is not set.
-	if command == "install" || command == "i" || command == "add" {
+	// Use progress TUI for one-shot commands when stdout is a TTY and --raw is not set.
+	type progressLabels struct {
+		action string
+		done   string
+	}
+	labels := map[string]progressLabels{
+		"install": {"Installing", "Installed"},
+		"i":       {"Installing", "Installed"},
+		"add":     {"Adding", "Added"},
+		"remove":  {"Removing", "Removed"},
+	}
+
+	if lbl, ok := labels[command]; ok {
 		isTTY := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
 		if isTTY && !rawOutput {
-			return progress.Run(args, dryRun, vibes, notify)
+			return progress.Run(progress.Config{
+				Args:   args,
+				DryRun: dryRun,
+				Vibes:  vibes,
+				Notify: notify,
+				Action: lbl.action,
+				Done:   lbl.done,
+			})
 		}
 	}
 

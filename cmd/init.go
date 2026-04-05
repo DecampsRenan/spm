@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
 	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/progress"
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
 	"github.com/decampsrenan/spm/internal/runner"
@@ -68,16 +70,40 @@ func runInit(args []string) error {
 		pm = selected
 	}
 
+	isTTY := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
+
 	// Run <pm> init
 	initArgs := resolver.Resolve(pm, "init", extraArgs)
-	if err := runner.RunSubprocess(initArgs, dryRun); err != nil {
-		return fmt.Errorf("init failed: %w", err)
+	if isTTY && !rawOutput {
+		if err := progress.Run(progress.Config{
+			Args:   initArgs,
+			DryRun: dryRun,
+			Action: "Initializing",
+			Done:   "Initialized",
+		}); err != nil {
+			return fmt.Errorf("init failed: %w", err)
+		}
+	} else {
+		if err := runner.RunSubprocess(initArgs, dryRun); err != nil {
+			return fmt.Errorf("init failed: %w", err)
+		}
 	}
 
 	// Run <pm> install to generate lock file
 	installArgs := resolver.Resolve(pm, "install", nil)
-	if err := runner.RunSubprocess(installArgs, dryRun); err != nil {
-		return fmt.Errorf("install failed: %w", err)
+	if isTTY && !rawOutput {
+		if err := progress.Run(progress.Config{
+			Args:   installArgs,
+			DryRun: dryRun,
+			Action: "Installing dependencies",
+			Done:   "Dependencies installed",
+		}); err != nil {
+			return fmt.Errorf("install failed: %w", err)
+		}
+	} else {
+		if err := runner.RunSubprocess(installArgs, dryRun); err != nil {
+			return fmt.Errorf("install failed: %w", err)
+		}
 	}
 
 	if !dryRun {

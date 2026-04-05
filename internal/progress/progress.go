@@ -17,10 +17,33 @@ import (
 
 const fadeDuration = 3 * time.Second
 
+// Config holds options for the progress TUI.
+type Config struct {
+	Args   []string
+	DryRun bool
+	Vibes  bool
+	Notify bool
+	Action string // shown during progress, e.g. "Installing"
+	Done   string // shown on success, e.g. "Installed"
+}
+
 // Run executes the given command with a progress TUI.
 // It pipes stdout/stderr through a bubbletea model that shows a spinner,
 // scrolling log lines, and elapsed time.
-func Run(args []string, dryRun bool, vibes bool, notify bool) error {
+func Run(cfg Config) error {
+	args := cfg.Args
+	dryRun := cfg.DryRun
+	vibes := cfg.Vibes
+	notify := cfg.Notify
+
+	action := cfg.Action
+	if action == "" {
+		action = "Installing"
+	}
+	done := cfg.Done
+	if done == "" {
+		done = "Installed"
+	}
 	if len(args) == 0 {
 		return fmt.Errorf("no command to run")
 	}
@@ -85,7 +108,7 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	}()
 
 	// Run TUI.
-	m := newProgressModel(msgCh)
+	m := newProgressModel(msgCh, action, done)
 	p := tea.NewProgram(m)
 
 	// Handle signals.
