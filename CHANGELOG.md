@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Progress TUI logging (spinner + last log lines + elapsed time) for `spm remove` and `spm init` — previously these passed through raw package manager output. Both `init` steps (`pm init` and `pm install`) now show their own progress with appropriate labels ("Initializing"/"Installing dependencies").
+- Unit tests for the progress TUI output format covering all configurable labels.
+
+### Changed
+
+- The progress TUI now accepts a `Config` struct with configurable `Action`/`Done` labels instead of hardcoded "Installing"/"Installed". Each one-shot command shows its own verbs: `install`/`add`/`remove` → "Installing"/"Adding"/"Removing".
+
 ## [0.7.0] - 2026-04-01
 
 ### Added

@@ -14,7 +14,7 @@ import (
 
 const maxLogLines = 5
 
-// model is the bubbletea model for the install progress TUI.
+// model is the bubbletea model for the progress TUI.
 type model struct {
 	spinner   spinner.Model
 	lines     []string // ring buffer of last N output lines
@@ -24,6 +24,8 @@ type model struct {
 	err       error
 	width     int
 	msgCh     <-chan tea.Msg
+	action    string // e.g. "Installing"
+	doneLabel string // e.g. "Installed"
 }
 
 // Messages
@@ -37,7 +39,7 @@ type doneMsg struct {
 
 type timerTickMsg time.Time
 
-func newProgressModel(msgCh <-chan tea.Msg) model {
+func newProgressModel(msgCh <-chan tea.Msg, action, doneLabel string) model {
 	s := spinner.New()
 	s.Spinner = spinner.MiniDot
 	s.Style = lipgloss.NewStyle().Foreground(ui.ColorPrimary)
@@ -47,6 +49,8 @@ func newProgressModel(msgCh <-chan tea.Msg) model {
 		startTime: time.Now(),
 		width:     80,
 		msgCh:     msgCh,
+		action:    action,
+		doneLabel: doneLabel,
 	}
 }
 
@@ -103,7 +107,7 @@ func (m model) View() tea.View {
 	if m.done {
 		// Final summary
 		if m.exitCode == 0 {
-			status := ui.Success(fmt.Sprintf("Installed in %s", elapsed))
+			status := ui.Success(fmt.Sprintf("%s in %s", m.doneLabel, elapsed))
 			b.WriteString("  " + status + "\n")
 		} else {
 			status := ui.Error(fmt.Sprintf("Failed in %s", elapsed))
@@ -111,8 +115,9 @@ func (m model) View() tea.View {
 		}
 	} else {
 		// Spinner + status
-		status := fmt.Sprintf("  %s Installing...%s",
+		status := fmt.Sprintf("  %s %s...%s",
 			m.spinner.View(),
+			m.action,
 			ui.Dim(fmt.Sprintf("%"+fmt.Sprintf("%d", max(1, m.width-24))+"s", elapsed)),
 		)
 		b.WriteString(status + "\n")
