@@ -146,10 +146,10 @@ spm build
 # Pick a script interactively from package.json
 spm run
 
-# Remove node_modules
+# Remove artifact directories (e.g. node_modules)
 spm clean
 
-# Remove node_modules and the lock file
+# Remove artifact directories and the lock file
 spm clean --lock
 
 # Skip the confirmation prompt (useful in CI)
@@ -222,7 +222,7 @@ spm -v
 | `spm add`     | *(interactive search)* | *(interactive search)* | *(interactive search)* | *(interactive search)* |
 | `spm run`     | *(interactive)*   | *(interactive)* | *(interactive)* | *(interactive)* |
 | `spm remove foo` | `npm uninstall foo` | `yarn remove foo` | `pnpm remove foo` | `bun remove foo` |
-| `spm clean`   | Removes `node_modules` (and lock file with `--lock`) |                 |                 |
+| `spm clean`   | Removes artifact directories (and lock file with `--lock`) |                 |                 |
 | `spm audit`   | `npm audit --json`| `yarn audit --json` | `pnpm audit --json` |                 |
 | `spm upgrade` | Self-updates spm via GitHub Releases |                 |                 |
 | `spm dev`     | `npm run dev`     | `yarn dev`      | `pnpm dev`      | `bun dev`       |

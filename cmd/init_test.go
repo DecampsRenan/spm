@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/ecosystem"
 )
 
 func TestRunInitPackageJsonExists(t *testing.T) {
@@ -111,11 +111,11 @@ func TestRunInitNoArgNonTTY(t *testing.T) {
 }
 
 func TestValidPMs(t *testing.T) {
-	expected := map[string]detector.PackageManager{
-		"npm":  detector.NPM,
-		"yarn": detector.Yarn,
-		"pnpm": detector.Pnpm,
-		"bun":  detector.Bun,
+	expected := map[string]ecosystem.PackageManager{
+		"npm":  ecosystem.NPM,
+		"yarn": ecosystem.Yarn,
+		"pnpm": ecosystem.Pnpm,
+		"bun":  ecosystem.Bun,
 	}
 	for name, want := range expected {
 		got, ok := validPMs[name]

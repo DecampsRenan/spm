@@ -14,6 +14,7 @@ import (
 
 	"github.com/decampsrenan/spm/internal/audio"
 	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/ecosystem"
 	"github.com/decampsrenan/spm/internal/progress"
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
@@ -128,7 +129,7 @@ var removeCmd = &cobra.Command{
 
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
-	Short: "Remove node_modules and optionally the lock file",
+	Short: "Remove artifact directories and optionally the lock file",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		lock, _ := cmd.Flags().GetBool("lock")
 		yes, _ := cmd.Flags().GetBool("yes")
@@ -250,7 +251,7 @@ func runClean(lock bool, yes bool) error {
 			return err
 		}
 	} else {
-		// Only need the project dir for node_modules removal.
+		// Only need the project dir for artifact removal.
 		detections, err := detector.Detect(cwd)
 		var noLock *detector.ErrNoLockFile
 		if errors.As(err, &noLock) {
@@ -267,7 +268,14 @@ func runClean(lock bool, yes bool) error {
 		}
 	}
 
-	targets := []string{"node_modules"}
+	// Build targets from ecosystem artifact dirs.
+	eco := ecosystem.ForPM(det.PM)
+	var targets []string
+	if eco != nil {
+		targets = eco.ArtifactDirs()
+	} else {
+		targets = []string{"node_modules"}
+	}
 	if lock {
 		lockFile := detector.LockFileName(det.PM)
 		if lockFile != "" {
@@ -312,7 +320,12 @@ func runClean(lock bool, yes bool) error {
 
 	for _, t := range existing {
 		path := filepath.Join(det.Dir, t)
-		if t == "node_modules" {
+		// Use RemoveAll for directories, Remove for files.
+		info, err := os.Stat(path)
+		if err != nil {
+			return fmt.Errorf("failed to stat %s: %w", path, err)
+		}
+		if info.IsDir() {
 			err = os.RemoveAll(path)
 		} else {
 			err = os.Remove(path)

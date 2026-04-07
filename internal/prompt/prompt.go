@@ -8,6 +8,7 @@ import (
 	"github.com/mattn/go-isatty"
 
 	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/ecosystem"
 	"github.com/decampsrenan/spm/internal/ui"
 )
 
@@ -115,16 +116,16 @@ func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 }
 
 // SelectPM asks the user to pick a package manager (used by spm init).
-func SelectPM() (detector.PackageManager, error) {
+func SelectPM() (ecosystem.PackageManager, error) {
 	if !isatty.IsTerminal(os.Stdin.Fd()) && !isatty.IsCygwinTerminal(os.Stdin.Fd()) {
 		return "", fmt.Errorf("no package manager specified and stdin is not a TTY — pass it as argument: spm init <pm>")
 	}
 
 	options := []huh.Option[string]{
-		huh.NewOption(string(detector.NPM), string(detector.NPM)),
-		huh.NewOption(string(detector.Yarn), string(detector.Yarn)),
-		huh.NewOption(string(detector.Pnpm), string(detector.Pnpm)),
-		huh.NewOption(string(detector.Bun), string(detector.Bun)),
+		huh.NewOption(string(ecosystem.NPM), string(ecosystem.NPM)),
+		huh.NewOption(string(ecosystem.Yarn), string(ecosystem.Yarn)),
+		huh.NewOption(string(ecosystem.Pnpm), string(ecosystem.Pnpm)),
+		huh.NewOption(string(ecosystem.Bun), string(ecosystem.Bun)),
 	}
 
 	var choice string
@@ -138,7 +139,7 @@ func SelectPM() (detector.PackageManager, error) {
 		return "", err
 	}
 
-	return detector.PackageManager(choice), nil
+	return ecosystem.PackageManager(choice), nil
 }
 
 // SelectFromAll asks the user to pick a package manager when no lock file is found.
@@ -148,10 +149,10 @@ func SelectFromAll(projectDir string) (detector.Detection, error) {
 	}
 
 	options := []huh.Option[string]{
-		huh.NewOption(string(detector.NPM), string(detector.NPM)),
-		huh.NewOption(string(detector.Yarn), string(detector.Yarn)),
-		huh.NewOption(string(detector.Pnpm), string(detector.Pnpm)),
-		huh.NewOption(string(detector.Bun), string(detector.Bun)),
+		huh.NewOption(string(ecosystem.NPM), string(ecosystem.NPM)),
+		huh.NewOption(string(ecosystem.Yarn), string(ecosystem.Yarn)),
+		huh.NewOption(string(ecosystem.Pnpm), string(ecosystem.Pnpm)),
+		huh.NewOption(string(ecosystem.Bun), string(ecosystem.Bun)),
 	}
 
 	var choice string
@@ -165,5 +166,5 @@ func SelectFromAll(projectDir string) (detector.Detection, error) {
 		return detector.Detection{}, err
 	}
 
-	return detector.Detection{PM: detector.PackageManager(choice), Dir: projectDir}, nil
+	return detector.Detection{PM: ecosystem.PackageManager(choice), Dir: projectDir}, nil
 }

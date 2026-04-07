@@ -6,13 +6,24 @@ import (
 	"testing"
 )
 
+// stubProvider is a minimal Provider for testing.
+type stubProvider struct{}
+
+func (s *stubProvider) BuildAuditCommand(_ string, _ Options) ([]string, error) {
+	return []string{"npm", "audit", "--json"}, nil
+}
+
+func (s *stubProvider) ParseAuditOutput(_ string, _ []byte) (*AuditResult, error) {
+	return &AuditResult{PM: "npm", Summary: make(map[Severity]int)}, nil
+}
+
 func TestRunDryRun(t *testing.T) {
 	// Capture stdout to verify dry-run message.
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	exitCode, err := Run("npm", t.TempDir(), Options{DryRun: true})
+	exitCode, err := Run(&stubProvider{}, t.TempDir(), Options{DryRun: true})
 
 	w.Close()
 	os.Stdout = old

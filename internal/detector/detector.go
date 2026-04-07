@@ -4,31 +4,33 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/decampsrenan/spm/internal/ecosystem"
 )
 
-type PackageManager string
+// lockFileMap is built from the registered ecosystems at init time.
+var lockFileMap map[string]ecosystem.PackageManager
 
-const (
-	NPM  PackageManager = "npm"
-	Yarn PackageManager = "yarn"
-	Pnpm PackageManager = "pnpm"
-	Bun  PackageManager = "bun"
-)
+// manifestFiles is the set of manifest files across all ecosystems.
+var manifestFiles map[string]bool
 
-var lockFiles = map[string]PackageManager{
-	"package-lock.json": NPM,
-	"yarn.lock":         Yarn,
-	"pnpm-lock.yaml":    Pnpm,
-	"bun.lock":          Bun,
-	"bun.lockb":         Bun,
+func init() {
+	lockFileMap = make(map[string]ecosystem.PackageManager)
+	manifestFiles = make(map[string]bool)
+	for _, eco := range ecosystem.All() {
+		for _, lf := range eco.LockFiles() {
+			lockFileMap[lf] = eco.Name()
+		}
+		manifestFiles[eco.ManifestFile()] = true
+	}
 }
 
 type Detection struct {
-	PM  PackageManager
+	PM  ecosystem.PackageManager
 	Dir string
 }
 
-// ErrNoLockFile is returned when a package.json is found but no lock file exists.
+// ErrNoLockFile is returned when a manifest is found but no lock file exists.
 type ErrNoLockFile struct {
 	Dir string
 }
@@ -37,8 +39,8 @@ func (e *ErrNoLockFile) Error() string {
 	return fmt.Sprintf("no lock file found in %s", e.Dir)
 }
 
-// Detect walks up from startDir looking for a directory containing package.json
-// and at least one known lock file. It stops at $HOME.
+// Detect walks up from startDir looking for a directory containing a manifest
+// file and at least one known lock file. It stops at $HOME.
 // Returns all detected package managers in the first matching directory.
 func Detect(startDir string) ([]Detection, error) {
 	home, err := os.UserHomeDir()
@@ -47,15 +49,15 @@ func Detect(startDir string) ([]Detection, error) {
 	}
 
 	dir := startDir
-	var firstPackageJSONDir string
+	var firstManifestDir string
 	for {
-		if hasFile(dir, "package.json") {
-			if firstPackageJSONDir == "" {
-				firstPackageJSONDir = dir
+		if hasManifest(dir) {
+			if firstManifestDir == "" {
+				firstManifestDir = dir
 			}
 			var detections []Detection
-			seen := make(map[PackageManager]bool)
-			for lock, pm := range lockFiles {
+			seen := make(map[ecosystem.PackageManager]bool)
+			for lock, pm := range lockFileMap {
 				if hasFile(dir, lock) && !seen[pm] {
 					seen[pm] = true
 					detections = append(detections, Detection{PM: pm, Dir: dir})
@@ -77,26 +79,34 @@ func Detect(startDir string) ([]Detection, error) {
 		dir = parent
 	}
 
-	if firstPackageJSONDir != "" {
-		return nil, &ErrNoLockFile{Dir: firstPackageJSONDir}
+	if firstManifestDir != "" {
+		return nil, &ErrNoLockFile{Dir: firstManifestDir}
 	}
-	return nil, fmt.Errorf("no package.json with a lock file found (searched up to %s)", home)
+	return nil, fmt.Errorf("no project manifest with a lock file found (searched up to %s)", home)
 }
 
-// LockFileName returns the lock file name for the given package manager.
-func LockFileName(pm PackageManager) string {
-	// Bun has two lock files (bun.lock and legacy bun.lockb) in the map.
-	// Go map iteration is non-deterministic, so we return the recommended
-	// modern format explicitly to avoid returning the legacy binary one.
-	if pm == Bun {
-		return "bun.lock"
+// LockFileName returns the preferred lock file name for the given package manager.
+func LockFileName(pm ecosystem.PackageManager) string {
+	eco := ecosystem.ForPM(pm)
+	if eco == nil {
+		return ""
 	}
-	for name, p := range lockFiles {
-		if p == pm {
-			return name
+	locks := eco.LockFiles()
+	if len(locks) == 0 {
+		return ""
+	}
+	// Return the first (preferred) lock file.
+	return locks[0]
+}
+
+// hasManifest checks if any known manifest file exists in the directory.
+func hasManifest(dir string) bool {
+	for mf := range manifestFiles {
+		if hasFile(dir, mf) {
+			return true
 		}
 	}
-	return ""
+	return false
 }
 
 func hasFile(dir, name string) bool {
