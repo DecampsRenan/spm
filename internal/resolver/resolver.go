@@ -1,54 +1,15 @@
 package resolver
 
-import "github.com/decampsrenan/spm/internal/detector"
+import "github.com/decampsrenan/spm/internal/ecosystem"
 
 // Resolve translates an spm command + args into the actual package manager command.
 // command is the spm verb (install, add, or a script name).
 // args are extra arguments (package names, flags, etc.).
-func Resolve(pm detector.PackageManager, command string, args []string) []string {
-	bin := string(pm)
-
-	switch command {
-	case "init":
-		switch pm {
-		case detector.Pnpm, detector.Bun:
-			// pnpm and bun init are already non-interactive
-			return append([]string{bin, "init"}, args...)
-		case detector.Yarn:
-			// yarn classic needs -y; yarn Berry ignores it harmlessly
-			return append([]string{bin, "init", "-y"}, args...)
-		default:
-			// npm needs -y for non-interactive init
-			return append([]string{bin, "init", "-y"}, args...)
-		}
-
-	case "install", "i":
-		return append([]string{bin, "install"}, args...)
-
-	case "add":
-		switch pm {
-		case detector.NPM:
-			return append([]string{bin, "install"}, args...)
-		default:
-			return append([]string{bin, "add"}, args...)
-		}
-
-	case "remove":
-		switch pm {
-		case detector.NPM:
-			return append([]string{bin, "uninstall"}, args...)
-		default:
-			return append([]string{bin, "remove"}, args...)
-		}
-
-	default:
-		// Fallback: treat as a script run
-		switch pm {
-		case detector.NPM:
-			return append([]string{bin, "run", command}, args...)
-		default:
-			// yarn, pnpm, and bun don't need explicit "run"
-			return append([]string{bin, command}, args...)
-		}
+func Resolve(pm ecosystem.PackageManager, command string, args []string) []string {
+	eco := ecosystem.ForPM(pm)
+	if eco == nil {
+		// Unknown PM — best effort: use PM name as binary.
+		return append([]string{string(pm), command}, args...)
 	}
+	return eco.Resolve(command, args)
 }

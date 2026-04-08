@@ -9,6 +9,7 @@ import (
 	"github.com/decampsrenan/spm/internal/audio"
 	"github.com/decampsrenan/spm/internal/audit"
 	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/ecosystem"
 	"github.com/decampsrenan/spm/internal/prompt"
 )
 
@@ -41,6 +42,11 @@ var auditCmd = &cobra.Command{
 			}
 		}
 
+		eco := ecosystem.ForPM(det.PM)
+		if eco == nil {
+			return fmt.Errorf("unsupported package manager: %s", det.PM)
+		}
+
 		opts := audit.Options{
 			ProdOnly: auditProdOnly,
 			JSON:     auditJSON,
@@ -56,7 +62,7 @@ var auditCmd = &cobra.Command{
 			opts.Severity = sev
 		}
 
-		exitCode, err := audit.Run(string(det.PM), det.Dir, opts)
+		exitCode, err := audit.Run(eco, det.Dir, opts)
 		if err != nil {
 			if notify {
 				_ = audio.PlayNotification(audio.SoundError)

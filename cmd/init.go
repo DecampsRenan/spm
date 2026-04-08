@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/decampsrenan/spm/internal/detector"
+	"github.com/decampsrenan/spm/internal/ecosystem"
 	"github.com/decampsrenan/spm/internal/prompt"
 	"github.com/decampsrenan/spm/internal/resolver"
 	"github.com/decampsrenan/spm/internal/runner"
@@ -35,11 +35,11 @@ var initCmd = &cobra.Command{
 	},
 }
 
-var validPMs = map[string]detector.PackageManager{
-	"npm":  detector.NPM,
-	"yarn": detector.Yarn,
-	"pnpm": detector.Pnpm,
-	"bun":  detector.Bun,
+var validPMs = map[string]ecosystem.PackageManager{
+	"npm":  ecosystem.NPM,
+	"yarn": ecosystem.Yarn,
+	"pnpm": ecosystem.Pnpm,
+	"bun":  ecosystem.Bun,
 }
 
 func runInit(args []string) error {
@@ -50,7 +50,7 @@ func runInit(args []string) error {
 	}
 
 	// Determine PM and extra args
-	var pm detector.PackageManager
+	var pm ecosystem.PackageManager
 	var extraArgs []string
 
 	if len(args) > 0 {

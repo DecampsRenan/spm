@@ -14,10 +14,17 @@ const (
 	ExitError = 2
 )
 
-// Run executes the audit for the given package manager, parses the output,
+// Provider abstracts the audit behavior for a given ecosystem.
+// Each ecosystem implements this to build and parse its audit commands.
+type Provider interface {
+	BuildAuditCommand(dir string, opts Options) ([]string, error)
+	ParseAuditOutput(dir string, data []byte) (*AuditResult, error)
+}
+
+// Run executes the audit for the given provider, parses the output,
 // filters by severity, and renders the result. Returns an exit code.
-func Run(pm string, dir string, opts Options) (int, error) {
-	args, err := buildCommand(pm, dir, opts)
+func Run(provider Provider, dir string, opts Options) (int, error) {
+	args, err := provider.BuildAuditCommand(dir, opts)
 	if err != nil {
 		return ExitError, err
 	}
@@ -41,13 +48,13 @@ func Run(pm string, dir string, opts Options) (int, error) {
 
 	data := stdout.Bytes()
 	if len(data) == 0 {
-		return ExitError, fmt.Errorf("%s audit produced no output", pm)
+		return ExitError, fmt.Errorf("audit produced no output")
 	}
 
-	// Parse based on PM.
-	result, err := parse(pm, dir, data)
+	// Parse based on provider.
+	result, err := provider.ParseAuditOutput(dir, data)
 	if err != nil {
-		return ExitError, fmt.Errorf("failed to parse %s audit output: %w", pm, err)
+		return ExitError, fmt.Errorf("failed to parse audit output: %w", err)
 	}
 
 	// Filter by minimum severity.
@@ -68,27 +75,6 @@ func Run(pm string, dir string, opts Options) (int, error) {
 		return ExitVulns, nil
 	}
 	return ExitClean, nil
-}
-
-func parse(pm string, dir string, data []byte) (*AuditResult, error) {
-	switch pm {
-	case "npm":
-		return parseNPM(data)
-	case "yarn":
-		version, err := detectYarnVersion(dir)
-		if err != nil {
-			// Fall back to classic parse if we can't detect version.
-			return parseYarnClassic(data)
-		}
-		if version >= 2 {
-			return parseYarnBerry(data)
-		}
-		return parseYarnClassic(data)
-	case "pnpm":
-		return parsePnpm(data)
-	default:
-		return nil, fmt.Errorf("unsupported package manager: %s", pm)
-	}
 }
 
 func filterBySeverity(result *AuditResult, minSev Severity) *AuditResult {

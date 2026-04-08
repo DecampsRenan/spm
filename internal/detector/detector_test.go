@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/decampsrenan/spm/internal/ecosystem"
 )
 
 func TestDetectNPM(t *testing.T) {
@@ -16,7 +18,7 @@ func TestDetectNPM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != NPM {
+	if len(dets) != 1 || dets[0].PM != ecosystem.NPM {
 		t.Fatalf("expected npm, got %v", dets)
 	}
 }
@@ -30,7 +32,7 @@ func TestDetectYarn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Yarn {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Yarn {
 		t.Fatalf("expected yarn, got %v", dets)
 	}
 }
@@ -44,7 +46,7 @@ func TestDetectPnpm(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Pnpm {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Pnpm {
 		t.Fatalf("expected pnpm, got %v", dets)
 	}
 }
@@ -58,7 +60,7 @@ func TestDetectBun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Bun {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Bun {
 		t.Fatalf("expected bun, got %v", dets)
 	}
 }
@@ -72,7 +74,7 @@ func TestDetectBunLegacy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Bun {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Bun {
 		t.Fatalf("expected bun, got %v", dets)
 	}
 }
@@ -87,7 +89,7 @@ func TestDetectBunBothLockFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Bun {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Bun {
 		t.Fatalf("expected single bun detection, got %v", dets)
 	}
 }
@@ -106,7 +108,7 @@ func TestDetectWalksUp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Yarn {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Yarn {
 		t.Fatalf("expected yarn from parent, got %v", dets)
 	}
 	if dets[0].Dir != root {
@@ -162,7 +164,7 @@ func TestDetectWalksUpPastPackageJSONWithoutLockFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(dets) != 1 || dets[0].PM != Yarn {
+	if len(dets) != 1 || dets[0].PM != ecosystem.Yarn {
 		t.Fatalf("expected yarn from root, got %v", dets)
 	}
 	if dets[0].Dir != root {
@@ -181,14 +183,14 @@ func TestDetectNoPackageJSON(t *testing.T) {
 
 func TestLockFileName(t *testing.T) {
 	tests := []struct {
-		pm   PackageManager
+		pm   ecosystem.PackageManager
 		want string
 	}{
-		{NPM, "package-lock.json"},
-		{Yarn, "yarn.lock"},
-		{Pnpm, "pnpm-lock.yaml"},
-		{Bun, "bun.lock"},
-		{PackageManager("unknown"), ""},
+		{ecosystem.NPM, "package-lock.json"},
+		{ecosystem.Yarn, "yarn.lock"},
+		{ecosystem.Pnpm, "pnpm-lock.yaml"},
+		{ecosystem.Bun, "bun.lock"},
+		{ecosystem.PackageManager("unknown"), ""},
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.pm), func(t *testing.T) {

@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `internal/ecosystem` package centralizing all package-manager-specific logic behind an `Ecosystem` interface
+
+### Changed
+
+- Refactor audit, detector, resolver, and cmd packages to use the ecosystem registry instead of hardcoded switch statements
+- `spm clean` now removes ecosystem-specific artifact directories instead of hardcoded `node_modules`
+
+### Removed
+
+- Removed per-PM audit parsing and command-building files from `internal/audit/` (moved to ecosystem implementations)
+
 ## [0.7.0] - 2026-04-01
 
 ### Added
