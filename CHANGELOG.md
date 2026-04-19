@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - New `internal/ecosystem` package centralizing all package-manager-specific logic behind an `Ecosystem` interface
+- Test coverage for `internal/ecosystem` registry, `internal/search` npm registry client (HTTP-mocked), and `cmd/audit` command wiring
 
 ### Changed
 
