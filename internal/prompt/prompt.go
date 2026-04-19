@@ -64,13 +64,17 @@ func Select(detections []detector.Detection) (detector.Detection, error) {
 		return detector.Detection{}, err
 	}
 
+	return findDetectionByPM(detections, choice)
+}
+
+// findDetectionByPM returns the detection whose PM matches the given name.
+func findDetectionByPM(detections []detector.Detection, pm string) (detector.Detection, error) {
 	for _, d := range detections {
-		if string(d.PM) == choice {
+		if string(d.PM) == pm {
 			return d, nil
 		}
 	}
-
-	return detector.Detection{}, fmt.Errorf("unexpected selection: %s", choice)
+	return detector.Detection{}, fmt.Errorf("unexpected selection: %s", pm)
 }
 
 // SelectScript asks the user to pick a script from the available list.
@@ -80,16 +84,9 @@ func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 		return "", fmt.Errorf("no script specified and stdin is not a TTY — cannot prompt")
 	}
 
-	const maxCmdLen = 40
-
 	options := make([]huh.Option[int], len(scriptNames))
 	for i, name := range scriptNames {
-		cmd := scriptCmds[i]
-		if len(cmd) > maxCmdLen {
-			cmd = cmd[:maxCmdLen-1] + "…"
-		}
-		label := fmt.Sprintf("%s — %s", name, ui.Dim(cmd))
-		options[i] = huh.NewOption(label, i)
+		options[i] = huh.NewOption(scriptOptionLabel(name, scriptCmds[i]), i)
 	}
 
 	var choice int
@@ -113,6 +110,22 @@ func SelectScript(scriptNames []string, scriptCmds []string) (string, error) {
 	}
 
 	return scriptNames[choice], nil
+}
+
+// scriptOptionLabel formats a script entry as "name — cmd", truncating the
+// command to scriptCmdMaxLen with an ellipsis if necessary.
+func scriptOptionLabel(name, cmd string) string {
+	return fmt.Sprintf("%s — %s", name, ui.Dim(truncateCmd(cmd, scriptCmdMaxLen)))
+}
+
+const scriptCmdMaxLen = 40
+
+// truncateCmd shortens cmd to at most maxLen runes, ending with "…" when cut.
+func truncateCmd(cmd string, maxLen int) string {
+	if len(cmd) <= maxLen {
+		return cmd
+	}
+	return cmd[:maxLen-1] + "…"
 }
 
 // SelectPM asks the user to pick a package manager (used by spm init).

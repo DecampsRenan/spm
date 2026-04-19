@@ -5,11 +5,27 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 )
+
+// mockDownloader implements Downloader for testing.
+type mockDownloader struct {
+	body []byte
+	err  error
+}
+
+func (m *mockDownloader) Download(url string) (io.ReadCloser, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return io.NopCloser(bytes.NewReader(m.body)), nil
+}
 
 // mockFetcher implements ReleaseFetcher for testing.
 type mockFetcher struct {
@@ -206,6 +222,145 @@ func TestExtractBinary_NotFound(t *testing.T) {
 	_, err := extractBinary(bytes.NewReader(archive))
 	if err == nil {
 		t.Fatal("expected error when binary not found")
+	}
+}
+
+func TestExecute_HomebrewRefused(t *testing.T) {
+	result := &Result{
+		TargetPath:  "/opt/homebrew/Cellar/spm/0.4.0/bin/spm",
+		DownloadURL: "https://example.com/spm.tar.gz",
+	}
+	err := Execute(&mockDownloader{}, result)
+	if err == nil {
+		t.Fatal("expected error for Homebrew install")
+	}
+	if !contains(err.Error(), "Homebrew") {
+		t.Errorf("expected Homebrew error, got: %v", err)
+	}
+}
+
+func TestExecute_DownloadError(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "spm")
+	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	result := &Result{TargetPath: target, DownloadURL: "https://example.com/spm.tar.gz"}
+
+	err := Execute(&mockDownloader{err: fmt.Errorf("connection refused")}, result)
+	if err == nil {
+		t.Fatal("expected error for download failure")
+	}
+	if !contains(err.Error(), "connection refused") {
+		t.Errorf("expected download error to propagate, got: %v", err)
+	}
+}
+
+func TestExecute_InvalidArchive(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "spm")
+	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	result := &Result{TargetPath: target, DownloadURL: "https://example.com/spm.tar.gz"}
+
+	err := Execute(&mockDownloader{body: []byte("not a tar.gz")}, result)
+	if err == nil {
+		t.Fatal("expected error for invalid archive")
+	}
+}
+
+func TestExecute_BinaryNotInArchive(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "spm")
+	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	archive := createTarGz(t, "other-file", []byte("data"))
+	result := &Result{TargetPath: target, DownloadURL: "https://example.com/spm.tar.gz"}
+
+	err := Execute(&mockDownloader{body: archive}, result)
+	if err == nil {
+		t.Fatal("expected error when binary not in archive")
+	}
+}
+
+func TestExecute_SuccessfullyReplacesBinary(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "spm")
+	if err := os.WriteFile(target, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	newContent := []byte("new-spm-binary")
+	archive := createTarGz(t, "spm", newContent)
+	result := &Result{TargetPath: target, DownloadURL: "https://example.com/spm.tar.gz"}
+
+	if err := Execute(&mockDownloader{body: archive}, result); err != nil {
+		t.Fatalf("Execute failed: %v", err)
+	}
+
+	got, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, newContent) {
+		t.Errorf("binary not replaced: got %q, want %q", got, newContent)
+	}
+}
+
+func TestExecute_MissingTarget(t *testing.T) {
+	archive := createTarGz(t, "spm", []byte("new"))
+	result := &Result{
+		TargetPath:  "/nonexistent/path/spm",
+		DownloadURL: "https://example.com/spm.tar.gz",
+	}
+	err := Execute(&mockDownloader{body: archive}, result)
+	if err == nil {
+		t.Fatal("expected error when target doesn't exist")
+	}
+}
+
+func TestHTTPDownloader_Success(t *testing.T) {
+	want := []byte("archive-bytes")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(want)
+	}))
+	defer srv.Close()
+
+	d := &HTTPDownloader{}
+	body, err := d.Download(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer body.Close()
+	got, _ := io.ReadAll(body)
+	if !bytes.Equal(got, want) {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestHTTPDownloader_Non200(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "not found", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	d := &HTTPDownloader{}
+	_, err := d.Download(srv.URL)
+	if err == nil {
+		t.Fatal("expected error for 404")
+	}
+	if !contains(err.Error(), "404") {
+		t.Errorf("expected status in error, got: %v", err)
+	}
+}
+
+func TestHTTPDownloader_NetworkError(t *testing.T) {
+	d := &HTTPDownloader{}
+	// Use an invalid URL to trigger a transport error.
+	_, err := d.Download("http://127.0.0.1:1/definitely-not-listening")
+	if err == nil {
+		t.Fatal("expected network error")
 	}
 }
 
