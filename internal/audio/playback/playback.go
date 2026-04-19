@@ -1,6 +1,6 @@
 //go:build darwin || cgo
 
-package audio
+package playback
 
 import (
 	"bytes"
@@ -19,6 +19,8 @@ import (
 	"github.com/gopxl/beep/v2/effects"
 	"github.com/gopxl/beep/v2/mp3"
 	"github.com/gopxl/beep/v2/speaker"
+
+	"github.com/decampsrenan/spm/internal/audio"
 )
 
 //go:embed tashkent.mp3
@@ -230,12 +232,12 @@ func PlayMusicAndWait(fadeIn time.Duration) error {
 // This is intended to be called from the hidden _play-sound subcommand.
 func PlaySound(name string) error {
 	var data []byte
-	switch SoundName(name) {
-	case SoundSuccess:
+	switch audio.SoundName(name) {
+	case audio.SoundSuccess:
 		data = successSoundData
-	case SoundError:
+	case audio.SoundError:
 		data = errorSoundData
-	case SoundDing:
+	case audio.SoundDing:
 		data = dingSoundData
 	default:
 		return fmt.Errorf("unknown sound: %s", name)

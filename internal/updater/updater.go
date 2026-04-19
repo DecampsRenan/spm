@@ -49,6 +49,32 @@ type ReleaseFetcher interface {
 	FetchReleases() ([]Release, error)
 }
 
+// Downloader abstracts HTTP downloads of release archives for testing.
+type Downloader interface {
+	Download(url string) (io.ReadCloser, error)
+}
+
+// HTTPDownloader downloads archives via http.Get.
+type HTTPDownloader struct {
+	Client *http.Client
+}
+
+func (d *HTTPDownloader) Download(url string) (io.ReadCloser, error) {
+	client := d.Client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("downloading release: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("download failed with status %d", resp.StatusCode)
+	}
+	return resp.Body, nil
+}
+
 // GitHubFetcher fetches releases from the GitHub API.
 type GitHubFetcher struct {
 	Client *http.Client
@@ -151,22 +177,18 @@ func Plan(fetcher ReleaseFetcher, opts Options) (*Result, error) {
 }
 
 // Execute downloads and replaces the current binary.
-func Execute(result *Result) error {
+func Execute(downloader Downloader, result *Result) error {
 	if isHomebrew(result.TargetPath) {
 		return fmt.Errorf("spm appears to be installed via Homebrew — use `brew upgrade spm` instead")
 	}
 
-	resp, err := http.Get(result.DownloadURL)
+	body, err := downloader.Download(result.DownloadURL)
 	if err != nil {
-		return fmt.Errorf("downloading release: %w", err)
+		return err
 	}
-	defer resp.Body.Close()
+	defer body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed with status %d", resp.StatusCode)
-	}
-
-	binary, err := extractBinary(resp.Body)
+	binary, err := extractBinary(body)
 	if err != nil {
 		return err
 	}
