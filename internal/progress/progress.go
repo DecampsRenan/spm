@@ -44,9 +44,12 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 		}
 	}
 
-	// Set up subprocess with piped output.
+	// Set up subprocess with piped output. We deliberately do NOT inherit
+	// stdin: bubbletea owns stdin in raw mode and needs to receive Ctrl+C
+	// as a keystroke. Sharing stdin with the child would let the child
+	// consume key bytes (including Ctrl+C) and prevent the TUI from
+	// reacting to them.
 	cmd := exec.Command(bin, args[1:]...)
-	cmd.Stdin = os.Stdin
 
 	r, w, err := os.Pipe()
 	if err != nil {
@@ -84,17 +87,26 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 		close(msgCh)
 	}()
 
-	// Run TUI.
-	m := newProgressModel(msgCh)
+	// Run TUI. The model handles Ctrl+C as a key event (bubbletea puts the
+	// terminal in raw mode, so SIGINT is not delivered) and calls interrupt
+	// to kill the subprocess.
+	interrupt := func() {
+		_ = cmd.Process.Kill()
+	}
+	m := newProgressModel(msgCh, interrupt)
 	p := tea.NewProgram(m)
 
-	// Handle signals.
+	// Handle SIGTERM (and SIGINT, in case the TUI is not in raw mode for any
+	// reason — e.g. running with redirected stdin).
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
 	go func() {
-		s := <-sigCh
+		s, ok := <-sigCh
+		if !ok {
+			return
+		}
 		if vibesProc != nil {
 			vibesProc.StopImmediately()
 		}
@@ -116,17 +128,25 @@ func Run(args []string, dryRun bool, vibes bool, notify bool) error {
 	// Extract exit code from final model.
 	fm, ok := finalModel.(model)
 	exitCode := 0
+	interrupted := false
 	if ok {
 		exitCode = fm.exitCode
+		interrupted = fm.interrupted
 	}
 
 	// Stop music.
 	if vibesProc != nil {
-		if notify {
+		if notify && !interrupted {
+			vibesProc.StopImmediately()
+		} else if interrupted {
 			vibesProc.StopImmediately()
 		} else {
 			vibesProc.FadeOutAndDetach()
 		}
+	}
+
+	if interrupted {
+		os.Exit(130)
 	}
 
 	// Play notification sound.
