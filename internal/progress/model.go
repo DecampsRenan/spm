@@ -16,14 +16,16 @@ const maxLogLines = 5
 
 // model is the bubbletea model for the install progress TUI.
 type model struct {
-	spinner   spinner.Model
-	lines     []string // ring buffer of last N output lines
-	startTime time.Time
-	done      bool
-	exitCode  int
-	err       error
-	width     int
-	msgCh     <-chan tea.Msg
+	spinner     spinner.Model
+	lines       []string // ring buffer of last N output lines
+	startTime   time.Time
+	done        bool
+	exitCode    int
+	err         error
+	interrupted bool
+	width       int
+	msgCh       <-chan tea.Msg
+	interrupt   func()
 }
 
 // Messages
@@ -37,7 +39,7 @@ type doneMsg struct {
 
 type timerTickMsg time.Time
 
-func newProgressModel(msgCh <-chan tea.Msg) model {
+func newProgressModel(msgCh <-chan tea.Msg, interrupt func()) model {
 	s := spinner.New()
 	s.Spinner = spinner.MiniDot
 	s.Style = lipgloss.NewStyle().Foreground(ui.ColorPrimary)
@@ -47,6 +49,7 @@ func newProgressModel(msgCh <-chan tea.Msg) model {
 		startTime: time.Now(),
 		width:     80,
 		msgCh:     msgCh,
+		interrupt: interrupt,
 	}
 }
 
@@ -60,6 +63,16 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case tea.KeyPressMsg:
+		if msg.String() == "ctrl+c" {
+			m.interrupted = true
+			if m.interrupt != nil {
+				m.interrupt()
+			}
+			return m, tea.Quit
+		}
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width

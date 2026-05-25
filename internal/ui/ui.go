@@ -9,9 +9,12 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// Color palette — adaptive to dark/light terminal backgrounds.
-
-var hasDarkBG = lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+// hasDarkBG controls light/dark color choices. We default to dark because
+// most terminals are dark and lipgloss's HasDarkBackground query reads from
+// stdin at package-init time, which races with (and can break) any later TUI
+// input reader — including bubbletea's. TUI screens that need accurate
+// detection should listen for tea.BackgroundColorMsg in their Update.
+var hasDarkBG = true
 
 func lightDark(light, dark string) color.Color {
 	if hasDarkBG {
