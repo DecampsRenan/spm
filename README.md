@@ -61,7 +61,6 @@ Ever joined a project and had to check which package manager it uses before runn
 - ⬆️ **Self-upgrade** — `spm upgrade` updates spm to the latest release from GitHub
 - 🔎 **Interactive search** — `spm add` with no args lets you search and pick a package from the npm registry
 - 📋 **Package details** — press Enter on a search result to view metadata (license, downloads, stars, repo) and pick a specific version to install
-- ✨ **Progress TUI** — `spm install` shows a live spinner with elapsed time and scrolling logs (use `--raw` for raw output)
 
 ### Built With
 
@@ -176,9 +175,6 @@ spm install --notify
 
 # Combine vibes and notification
 spm install --vibes --notify
-
-# Show raw package manager output (skip progress TUI)
-spm install --raw
 
 # Run a security audit on dependencies
 spm audit
