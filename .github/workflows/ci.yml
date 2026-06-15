@@ -48,7 +48,9 @@ jobs:
 
   changelog:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    # Skip on release PRs: the release workflow intentionally empties the
+    # [Unreleased] section when it moves entries into a versioned heading.
+    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release/')
     steps:
       - uses: actions/checkout@v4
       - name: Check CHANGELOG has unreleased entries
