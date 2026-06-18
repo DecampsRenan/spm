@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/decampsrenan/spm/internal/audio"
+	"github.com/decampsrenan/spm/internal/audio/playback"
 	"github.com/decampsrenan/spm/internal/detector"
 	"github.com/decampsrenan/spm/internal/ecosystem"
 	"github.com/decampsrenan/spm/internal/prompt"
@@ -139,7 +139,7 @@ var playSoundCmd = &cobra.Command{
 	Hidden: true,
 	Args:   cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return audio.PlaySound(args[0])
+		return playback.PlaySound(args[0])
 	},
 }
 
@@ -152,7 +152,7 @@ var playMusicCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("invalid fade-in duration: %w", err)
 		}
-		return audio.PlayMusicAndWait(time.Duration(secs) * time.Second)
+		return playback.PlayMusicAndWait(time.Duration(secs) * time.Second)
 	},
 }
 

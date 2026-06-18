@@ -56,7 +56,7 @@ func runUpgrade() error {
 
 	ui.Println(ui.Dim(fmt.Sprintf("Downloading %s...", result.LatestVersion)))
 
-	if err := updater.Execute(result); err != nil {
+	if err := updater.Execute(&updater.HTTPDownloader{}, result); err != nil {
 		return err
 	}
 
